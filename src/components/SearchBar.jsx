@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { CircleX, Search } from "lucide-react";
 
 export default function SearchBar({
   value,
@@ -15,18 +15,18 @@ export default function SearchBar({
             type="search"
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            placeholder="Buscar por título, categoría, shortcut o contenido..."
-            className="field-shell w-full pr-12 text-base"
+            placeholder="Buscar por titulo, categoria, shortcut o contenido..."
+            className="field-shell w-full pr-14 text-base"
             style={{ paddingLeft: "2.69em" }}
           />
           {value ? (
             <button
               type="button"
               onClick={() => onChange("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
-              aria-label="Limpiar búsqueda"
+              className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-slate-900/85 text-slate-400 shadow-[0_10px_25px_rgba(15,23,42,0.28)] transition duration-200 hover:scale-105 hover:border-rose/40 hover:bg-rose/15 hover:text-rose focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/60"
+              aria-label="Limpiar busqueda"
             >
-              <X className="h-4 w-4" />
+              <CircleX className="h-[18px] w-[18px]" />
             </button>
           ) : null}
         </div>

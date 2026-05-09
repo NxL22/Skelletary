@@ -11,6 +11,7 @@ import PinModal from "./components/PinModal";
 import SettingsModal from "./components/SettingsModal";
 import EmptyState from "./components/EmptyState";
 import ToastStack from "./components/ToastStack";
+import ScrollToTopButton from "./components/ScrollToTopButton";
 import defaultTemplates from "./data/defaultTemplates.json";
 import { copyText } from "./lib/clipboard";
 import { exportTemplatesToMarkdown } from "./lib/exportMarkdown";
@@ -552,6 +553,7 @@ export default function App() {
       />
 
       <ToastStack toasts={toasts} />
+      <ScrollToTopButton />
     </div>
   );
 }

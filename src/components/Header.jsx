@@ -33,7 +33,7 @@ function BrandBadge({ missing, onMissing }) {
     <div className="relative h-20 w-20 overflow-hidden rounded-[26px] border border-cyan/20 bg-[linear-gradient(180deg,#f4f9ff,#dbe7f3)] shadow-[0_14px_30px_rgba(8,15,35,0.35)]">
       <div className="absolute inset-[1px] rounded-[24px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.95),rgba(226,238,248,0.92))]" />
       <img
-        src="/skelly-bust.png"
+        src="/skelly_logo.png"
         alt="Logo de Skelletary"
         className="relative z-10 h-full w-full object-cover object-center scale-[1.18]"
         onError={onMissing}
@@ -163,10 +163,10 @@ export default function Header({
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Skelly</p>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-white">
-                  Mascota de guardia
-                </h2>
+                    Tu asistente radiológica
+                  </h2>
                 <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
-                  Tu compañera visual para informes rápidos, consistentes y listos para copiar.
+                  Skelly te ayuda a completar tus plantillas con variables inteligentes y a mantener tu trabajo seguro con backups automáticos y un PIN local.
                 </p>
               </div>
 
