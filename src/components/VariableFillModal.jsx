@@ -14,6 +14,11 @@ export default function VariableFillModal({
     () => (template ? extractVariables(template.content) : []),
     [template],
   );
+  const modalTitle = variables.length === 1 ? "Completar variable" : "Completar variables";
+  const modalSubtitle =
+    variables.length === 1
+      ? "La variable vacía se reemplazará por ___ al copiar."
+      : "Las variables vacías se reemplazarán por ___ al copiar.";
   const [values, setValues] = useState({});
 
   useEffect(() => {
@@ -36,8 +41,8 @@ export default function VariableFillModal({
   return (
     <ModalShell
       open={open}
-      title="Completar variables"
-      subtitle="Las variables vacías se reemplazarán por ___ al copiar."
+      title={modalTitle}
+      subtitle={modalSubtitle}
       onClose={onClose}
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">

@@ -36,6 +36,10 @@ export default function SearchBar({
           <span className="badge-soft">{resultCount} resultados</span>
         </div>
       </div>
+
+      <p className="mt-3 text-sm text-slate-400">
+        Busca por fragmentos o sin acentos. Ejemplos: nor, varic nor, torax.
+      </p>
     </section>
   );
 }

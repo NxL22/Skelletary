@@ -1,8 +1,9 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { Heart, Layers3, ShieldAlert } from "lucide-react";
 import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import CategorySidebar from "./components/CategorySidebar";
+import PaginationControls from "./components/PaginationControls";
 import TemplateCard from "./components/TemplateCard";
 import TemplateDetailModal from "./components/TemplateDetailModal";
 import TemplateEditorModal from "./components/TemplateEditorModal";
@@ -10,10 +11,11 @@ import VariableFillModal from "./components/VariableFillModal";
 import PinModal from "./components/PinModal";
 import SettingsModal from "./components/SettingsModal";
 import EmptyState from "./components/EmptyState";
+import HelpModal from "./components/HelpModal";
 import ToastStack from "./components/ToastStack";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import defaultTemplates from "./data/defaultTemplates.json";
-import { copyText } from "./lib/clipboard";
+import { copyText, playCopyFeedback } from "./lib/clipboard";
 import { exportTemplatesToMarkdown } from "./lib/exportMarkdown";
 import {
   DEFAULT_PIN,
@@ -41,15 +43,32 @@ import {
 import { blankVariables, fillVariables, hasVariables } from "./lib/variables";
 
 const APP_VERSION = "1.0.0";
+const TEMPLATES_PER_PAGE = 60;
+const EDITING_ENABLED = false;
+const SETTINGS_ENABLED = false;
+const ADD_TEMPLATE_ENABLED = false;
+const BACKEND_DISABLED_TITLE = "Disponible cuando el proyecto tenga backend";
+
+function mergeStoredWithSeededTemplates(storedTemplates, seededTemplates) {
+  const storedIds = new Set(storedTemplates.map((template) => template.id));
+  const missingSeededTemplates = seededTemplates.filter((template) => !storedIds.has(template.id));
+
+  if (!missingSeededTemplates.length) {
+    return storedTemplates;
+  }
+
+  return [...storedTemplates, ...missingSeededTemplates];
+}
 
 function getInitialTemplates() {
+  const seededTemplates = normalizeTemplates(defaultTemplates);
   const storedTemplates = loadTemplates();
 
   if (storedTemplates?.length) {
-    return normalizeTemplates(storedTemplates);
+    const normalizedStoredTemplates = normalizeTemplates(storedTemplates);
+    return mergeStoredWithSeededTemplates(normalizedStoredTemplates, seededTemplates);
   }
 
-  const seededTemplates = normalizeTemplates(defaultTemplates);
   resetTemplates(seededTemplates);
   return seededTemplates;
 }
@@ -93,19 +112,31 @@ export default function App() {
   const [searchValue, setSearchValue] = useState("");
   const deferredQuery = useDeferredValue(searchValue);
   const [activeView, setActiveView] = useState(SPECIAL_VIEWS.all);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [editorState, setEditorState] = useState({ open: false, template: null });
   const [variableState, setVariableState] = useState({ open: false, template: null });
   const [pinMode, setPinMode] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [editUnlocked, setEditUnlocked] = useState(isEditUnlocked());
-  const [unlockExpiresAt, setUnlockExpiresAt] = useState(getEditUnlockExpiresAt());
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [editUnlocked, setEditUnlocked] = useState(EDITING_ENABLED ? isEditUnlocked() : false);
+  const [unlockExpiresAt, setUnlockExpiresAt] = useState(
+    EDITING_ENABLED ? getEditUnlockExpiresAt() : null,
+  );
   const [toasts, setToasts] = useState([]);
+  const resultsTopRef = useRef(null);
 
   const filteredTemplates = filterAndSortTemplates(templates, {
     query: deferredQuery,
     activeView,
   });
+  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / TEMPLATES_PER_PAGE));
+  const resolvedPage = Math.min(currentPage, totalPages);
+  const pageStartIndex = (resolvedPage - 1) * TEMPLATES_PER_PAGE;
+  const paginatedTemplates = filteredTemplates.slice(
+    pageStartIndex,
+    pageStartIndex + TEMPLATES_PER_PAGE,
+  );
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) || null;
   const categories = getTemplateCategories(templates);
   const categoryCounts = getCategoryCounts(templates);
@@ -118,6 +149,14 @@ export default function App() {
   }, [templates]);
 
   useEffect(() => {
+    if (!EDITING_ENABLED) {
+      lockEdit();
+      setEditUnlocked(false);
+      setUnlockExpiresAt(null);
+      setPinMode((current) => (current === "unlock" ? null : current));
+      return;
+    }
+
     function syncEditState() {
       setEditUnlocked(isEditUnlocked());
       setUnlockExpiresAt(getEditUnlockExpiresAt());
@@ -133,6 +172,16 @@ export default function App() {
       setSelectedTemplateId(null);
     }
   }, [selectedTemplateId, templates]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredQuery, activeView]);
+
+  useEffect(() => {
+    if (currentPage !== resolvedPage) {
+      setCurrentPage(resolvedPage);
+    }
+  }, [currentPage, resolvedPage]);
 
   function pushToast(message, tone = "info") {
     const id =
@@ -159,6 +208,17 @@ export default function App() {
     setUnlockExpiresAt(getEditUnlockExpiresAt());
   }
 
+  function handlePageChange(nextPage) {
+    const targetPage = Math.max(1, Math.min(nextPage, totalPages));
+
+    if (targetPage === resolvedPage) {
+      return;
+    }
+
+    setCurrentPage(targetPage);
+    resultsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function handleToggleFavorite(template) {
     setTemplates((current) =>
       current.map((entry) =>
@@ -175,6 +235,7 @@ export default function App() {
   async function handleCopyResult(template, finalText, successMessage) {
     try {
       await copyText(finalText);
+      void playCopyFeedback();
       setTemplates((current) =>
         current.map((entry) =>
           entry.id === template.id ? markTemplateCopied(entry) : entry,
@@ -222,6 +283,11 @@ export default function App() {
   }
 
   function openEditor(template = null) {
+    if (!ADD_TEMPLATE_ENABLED && !template) {
+      pushToast("Crear plantillas estará disponible cuando el proyecto tenga backend.", "info");
+      return;
+    }
+
     if (!editUnlocked) {
       return;
     }
@@ -243,6 +309,7 @@ export default function App() {
     } else {
       const template = createTemplate(form);
       setTemplates((current) => [template, ...current]);
+      setCurrentPage(1);
       pushToast("Plantilla creada", "success");
     }
 
@@ -256,6 +323,7 @@ export default function App() {
 
     const duplicate = duplicateTemplateRecord(template);
     setTemplates((current) => [duplicate, ...current]);
+    setCurrentPage(1);
     closeEditor();
     setSelectedTemplateId(duplicate.id);
     pushToast("Plantilla duplicada", "success");
@@ -293,7 +361,7 @@ export default function App() {
 
   async function handleImportFile(file) {
     if (!editUnlocked) {
-      pushToast("Desbloquea edicion para importar un backup.", "error");
+      pushToast("Importar backups estará disponible cuando el proyecto tenga backend.", "error");
       return;
     }
 
@@ -312,6 +380,7 @@ export default function App() {
       const importedTemplates = normalizeTemplates(payload.templates);
       setTemplates(importedTemplates);
       setActiveView(SPECIAL_VIEWS.all);
+      setCurrentPage(1);
       setSearchValue("");
       setSelectedTemplateId(null);
       pushToast("Backup importado correctamente", "success");
@@ -331,7 +400,7 @@ export default function App() {
 
   function handleRestoreDefaults() {
     if (!editUnlocked) {
-      pushToast("Desbloquea edicion para restaurar las plantillas base.", "error");
+      pushToast("Restaurar plantillas estará disponible cuando el proyecto tenga backend.", "error");
       return;
     }
 
@@ -343,12 +412,20 @@ export default function App() {
     resetTemplates(seededTemplates);
     setTemplates(seededTemplates);
     setActiveView(SPECIAL_VIEWS.all);
+    setCurrentPage(1);
     setSearchValue("");
     setSelectedTemplateId(null);
     pushToast("Plantillas base restauradas", "success");
   }
 
   async function handlePinSubmit(form, mode) {
+    if (mode !== "change" && !EDITING_ENABLED) {
+      return {
+        success: false,
+        message: "La edición estará disponible cuando el proyecto tenga backend.",
+      };
+    }
+
     if (mode === "change") {
       if (form.currentPin !== loadPin()) {
         return { success: false, message: "El PIN actual no coincide." };
@@ -391,12 +468,24 @@ export default function App() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <Header
+          addTemplateDisabled={!ADD_TEMPLATE_ENABLED}
           editUnlocked={editUnlocked}
+          editingEnabled={EDITING_ENABLED}
+          settingsDisabled={!SETTINGS_ENABLED}
+          unlockDisabled={!EDITING_ENABLED}
           unlockExpiresAt={unlockExpiresAt}
+          onHelpClick={() => setHelpOpen(true)}
           onUnlockClick={() => setPinMode("unlock")}
           onLockClick={handleLockEdit}
           onNewTemplate={() => openEditor(null)}
-          onSettingsClick={() => setSettingsOpen(true)}
+          onSettingsClick={() => {
+            if (!SETTINGS_ENABLED) {
+              pushToast("Ajustes estará disponible cuando el proyecto tenga backend.", "info");
+              return;
+            }
+
+            setSettingsOpen(true);
+          }}
         />
 
         <SearchBar
@@ -417,7 +506,7 @@ export default function App() {
           />
 
           <main className="space-y-4">
-            <div className="glass-panel rounded-[28px] p-4 shadow-card">
+            <div ref={resultsTopRef} className="glass-panel rounded-[28px] p-4 shadow-card">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
@@ -435,25 +524,44 @@ export default function App() {
                 <div className="flex flex-wrap gap-2">
                   <span className="badge-soft">{favoriteCount} favoritas</span>
                   <span className="badge-soft">{recentCount} recientes</span>
+                  {totalPages > 1 ? <span className="badge-soft">Página {resolvedPage}/{totalPages}</span> : null}
                   <span className="badge-soft">
-                    {editUnlocked ? "Edicion desbloqueada" : "Modo lectura"}
+                    {EDITING_ENABLED ? (editUnlocked ? "Edicion desbloqueada" : "Modo lectura") : "Edición en pausa"}
                   </span>
                 </div>
               </div>
             </div>
 
             {filteredTemplates.length ? (
-              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                {filteredTemplates.map((template) => (
-                  <TemplateCard
-                    key={template.id}
-                    template={template}
-                    onOpen={openTemplate}
-                    onCopy={handleCopy}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
-                ))}
-              </div>
+              <>
+                <PaginationControls
+                  currentPage={resolvedPage}
+                  totalPages={totalPages}
+                  totalItems={filteredTemplates.length}
+                  pageSize={TEMPLATES_PER_PAGE}
+                  onPageChange={handlePageChange}
+                />
+
+                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                  {paginatedTemplates.map((template) => (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      onOpen={openTemplate}
+                      onCopy={handleCopy}
+                      onToggleFavorite={handleToggleFavorite}
+                    />
+                  ))}
+                </div>
+
+                <PaginationControls
+                  currentPage={resolvedPage}
+                  totalPages={totalPages}
+                  totalItems={filteredTemplates.length}
+                  pageSize={TEMPLATES_PER_PAGE}
+                  onPageChange={handlePageChange}
+                />
+              </>
             ) : (
               <EmptyState
                 query={deferredQuery}
@@ -476,15 +584,24 @@ export default function App() {
               <div className="flex items-start gap-3">
                 <ShieldAlert className="mt-0.5 h-5 w-5 text-rose" />
                 <div>
-                  <p className="font-medium text-white">Modo lectura activo</p>
+                  <p className="font-medium text-white">
+                    {EDITING_ENABLED ? "Modo lectura activo" : "Edición en pausa"}
+                  </p>
                   <p className="mt-1 text-sm leading-6 text-slate-200">
-                    Puedes buscar, filtrar, copiar y marcar favoritas. Para crear o editar
-                    plantillas, desbloquea el modo edicion con tu PIN local.
+                    {EDITING_ENABLED
+                      ? "Puedes buscar, filtrar, copiar y marcar favoritas. Para crear o editar plantillas, desbloquea el modo edicion con tu PIN local."
+                      : "Puedes buscar, filtrar, copiar y marcar favoritas. La creación y la edición volverán cuando el proyecto tenga backend, cuentas y biblioteca personal del usuario."}
                   </p>
                 </div>
               </div>
 
-              <button type="button" onClick={() => setPinMode("unlock")} className="button-primary">
+              <button
+                type="button"
+                onClick={() => setPinMode("unlock")}
+                disabled={!EDITING_ENABLED}
+                title={!EDITING_ENABLED ? BACKEND_DISABLED_TITLE : undefined}
+                className="button-primary"
+              >
                 Desbloquear
               </button>
             </div>
@@ -532,14 +649,14 @@ export default function App() {
       />
 
       <PinModal
-        open={Boolean(pinMode)}
+        open={EDITING_ENABLED && Boolean(pinMode)}
         mode={pinMode}
         onClose={() => setPinMode(null)}
         onSubmit={handlePinSubmit}
       />
 
       <SettingsModal
-        open={settingsOpen}
+        open={SETTINGS_ENABLED && settingsOpen}
         onClose={() => setSettingsOpen(false)}
         editUnlocked={editUnlocked}
         onExportJson={handleExportJson}
@@ -550,6 +667,17 @@ export default function App() {
           setSettingsOpen(false);
           setPinMode("change");
         }}
+      />
+
+      <HelpModal
+        createTemplateDisabled={!ADD_TEMPLATE_ENABLED}
+        editingEnabled={EDITING_ENABLED}
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        editUnlocked={editUnlocked}
+        unlockDisabled={!EDITING_ENABLED}
+        onUnlockClick={() => setPinMode("unlock")}
+        onCreateTemplate={() => openEditor(null)}
       />
 
       <ToastStack toasts={toasts} />

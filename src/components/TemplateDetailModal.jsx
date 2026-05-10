@@ -49,6 +49,10 @@ export default function TemplateDetailModal({
     () => extractVariables(template.content),
     [template.content],
   );
+  const variableDetectedLabel =
+    variables.length === 1 ? "Variable detectada" : "Variables detectadas";
+  const inlineFillLabel =
+    variables.length === 1 ? "Completar variable aquí mismo" : "Completar variables aquí mismo";
   const [values, setValues] = useState({});
 
   useEffect(() => {
@@ -135,7 +139,7 @@ export default function TemplateDetailModal({
               {template.shortcut ? (
                 <span className="badge-soft font-mono text-cyan">{template.shortcut}</span>
               ) : null}
-              {variableEnabled ? <span className="badge-soft text-rose">Variables detectadas</span> : null}
+              {variableEnabled ? <span className="badge-soft text-rose">{variableDetectedLabel}</span> : null}
             </div>
             <TemplateContent text={template.content} />
           </div>
@@ -144,7 +148,7 @@ export default function TemplateDetailModal({
             <div className="rounded-[26px] border border-rose/20 bg-rose/10 p-5">
               <div className="flex items-center gap-2 text-base font-semibold text-white">
                 <Sparkles className="h-4 w-4 text-rose" />
-                Completar variables aquí mismo
+                {inlineFillLabel}
               </div>
               <p className="mt-2 text-sm leading-6 text-slate-200">
                 Rellena solo lo necesario. Si dejas algo vacío, se copiará como <span className="font-mono">___</span>.

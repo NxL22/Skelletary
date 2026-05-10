@@ -1,5 +1,6 @@
 import {
   Bone,
+  CircleHelp,
   Lock,
   Plus,
   Settings2,
@@ -8,6 +9,8 @@ import {
   Unlock,
 } from "lucide-react";
 import { useState } from "react";
+
+const SKELLY_ASSET_BASE = "/imagenes%20de%20Skelly";
 
 function getRemainingTimeLabel(expiresAt) {
   if (!expiresAt) {
@@ -22,20 +25,20 @@ function getRemainingTimeLabel(expiresAt) {
 function BrandBadge({ missing, onMissing }) {
   if (missing) {
     return (
-      <div className="relative flex h-20 w-20 items-center justify-center rounded-[26px] border border-cyan/20 bg-[linear-gradient(180deg,#f3f9ff,#dce8f5)] shadow-[0_14px_30px_rgba(8,15,35,0.35)]">
-        <div className="absolute inset-2 rounded-[20px] border border-slate-300/70 bg-white/80" />
+      <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-white/55 bg-[radial-gradient(circle_at_top,#ffffff_0%,#edf6ff_55%,#d7e7f5_100%)] shadow-[0_16px_34px_rgba(8,15,35,0.32)] ring-4 ring-white/10">
+        <div className="absolute inset-[4px] rounded-full border border-cyan/15 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(224,236,247,0.88))]" />
         <Bone className="relative z-10 h-8 w-8 text-cyan" />
       </div>
     );
   }
 
   return (
-    <div className="relative h-20 w-20 overflow-hidden rounded-[26px] border border-cyan/20 bg-[linear-gradient(180deg,#f4f9ff,#dbe7f3)] shadow-[0_14px_30px_rgba(8,15,35,0.35)]">
-      <div className="absolute inset-[1px] rounded-[24px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.95),rgba(226,238,248,0.92))]" />
+    <div className="relative h-20 w-20 overflow-hidden rounded-full border border-white/55 bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef6ff_55%,#d8e6f4_100%)] shadow-[0_16px_34px_rgba(8,15,35,0.32)] ring-4 ring-white/10">
+      <div className="absolute inset-[4px] rounded-full bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.98),rgba(226,238,248,0.82))]" />
       <img
-        src="/skelly_logo.png"
+        src={`${SKELLY_ASSET_BASE}/skelly_logo.png`}
         alt="Logo de Skelletary"
-        className="relative z-10 h-full w-full object-cover object-center scale-[1.18]"
+        className="relative z-10 h-full w-full object-contain object-center scale-[1.34]"
         onError={onMissing}
       />
     </div>
@@ -51,8 +54,7 @@ function HeroMascot({ missing, onMissing }) {
         </div>
         <p className="font-display text-lg font-semibold text-slate-900">Skelly lista para copiar</p>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Si luego agregas <span className="font-mono text-cyan">/public/skelly-bust.png</span>,
-          este espacio la mostrará automáticamente.
+          Si luego agregas o reemplazas <span className="font-mono text-cyan">/public/imagenes de Skelly/skelly-bust.png</span>, este espacio la mostrará automáticamente.
         </p>
       </div>
     );
@@ -67,7 +69,7 @@ function HeroMascot({ missing, onMissing }) {
         Diagnostic mode
       </div>
       <img
-        src="/skelly-bust.png"
+        src={`${SKELLY_ASSET_BASE}/skelly-bust.png`}
         alt="Skelly, asistente radiológica"
         className="relative z-10 h-full w-full object-cover object-[center_14%] scale-[1.08] drop-shadow-[0_24px_35px_rgba(85,120,155,0.35)]"
         onError={onMissing}
@@ -77,8 +79,13 @@ function HeroMascot({ missing, onMissing }) {
 }
 
 export default function Header({
+  addTemplateDisabled,
   editUnlocked,
+  editingEnabled,
+  settingsDisabled,
+  unlockDisabled,
   unlockExpiresAt,
+  onHelpClick,
   onUnlockClick,
   onLockClick,
   onNewTemplate,
@@ -130,14 +137,26 @@ export default function Header({
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" onClick={onSettingsClick} className="button-secondary">
+            <button
+              type="button"
+              onClick={onSettingsClick}
+              disabled={settingsDisabled}
+              title={settingsDisabled ? "Disponible cuando el proyecto tenga backend" : undefined}
+              className="button-secondary"
+            >
               <Settings2 className="h-4 w-4" />
               Ajustes
             </button>
 
             {editUnlocked ? (
               <>
-                <button type="button" onClick={onNewTemplate} className="button-primary">
+                <button
+                  type="button"
+                  onClick={onNewTemplate}
+                  disabled={addTemplateDisabled}
+                  title={addTemplateDisabled ? "Disponible cuando el proyecto tenga backend" : undefined}
+                  className="button-primary"
+                >
                   <Plus className="h-4 w-4" />
                   Nueva plantilla
                 </button>
@@ -147,7 +166,13 @@ export default function Header({
                 </button>
               </>
             ) : (
-              <button type="button" onClick={onUnlockClick} className="button-primary">
+              <button
+                type="button"
+                onClick={onUnlockClick}
+                disabled={unlockDisabled}
+                title={unlockDisabled ? "Disponible cuando el proyecto tenga backend" : undefined}
+                className="button-primary"
+              >
                 <Unlock className="h-4 w-4" />
                 Desbloquear edición
               </button>
@@ -163,28 +188,39 @@ export default function Header({
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Skelly</p>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-white">
-                    Tu asistente radiológica
-                  </h2>
+                  Tu asistente radiológica
+                </h2>
                 <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
                   Skelly te ayuda a completar tus plantillas con variables inteligentes y a mantener tu trabajo seguro con backups automáticos y un PIN local.
                 </p>
+                <button
+                  type="button"
+                  title="Abre una guía rápida para aprender a usar Skelletary"
+                  onClick={onHelpClick}
+                  className="button-secondary mt-4"
+                >
+                  Skelly te guía
+                  <CircleHelp className="h-4 w-4" />
+                </button>
               </div>
 
               <div
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
-                  editUnlocked
+                  editingEnabled && editUnlocked
                     ? "bg-emerald-400/10 text-emerald-200"
                     : "bg-white/5 text-slate-300"
                 }`}
               >
-                {editUnlocked ? (
+                {editingEnabled && editUnlocked ? (
                   <ShieldCheck className="h-3.5 w-3.5" />
                 ) : (
                   <Lock className="h-3.5 w-3.5" />
                 )}
-                {editUnlocked
+                {editingEnabled && editUnlocked
                   ? `Edición desbloqueada${remainingLabel ? ` · ${remainingLabel}` : ""}`
-                  : "Modo lectura"}
+                  : editingEnabled
+                    ? "Modo lectura"
+                    : "Edición en pausa"}
               </div>
             </div>
 

@@ -13,6 +13,15 @@ function toSlug(value = "") {
     .replace(/^-+|-+$/g, "");
 }
 
+function normalizeSearchText(value = "") {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -115,21 +124,103 @@ export function getCategoryCounts(templates = []) {
   }, {});
 }
 
-function matchesQuery(template, query) {
-  if (!query) {
+function buildSearchFields(template) {
+  const title = normalizeSearchText(template.title);
+  const category = normalizeSearchText(template.category);
+  const shortcut = normalizeSearchText(template.shortcut);
+  const content = normalizeSearchText(template.content);
+
+  return {
+    title,
+    category,
+    shortcut,
+    content,
+    haystack: [title, category, shortcut, content].filter(Boolean).join(" "),
+  };
+}
+
+function getQueryTokens(query) {
+  return normalizeSearchText(query)
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function matchesQuery(searchFields, queryTokens) {
+  if (!queryTokens.length) {
     return true;
   }
 
-  const haystack = [
-    template.title,
-    template.category,
-    template.shortcut,
-    template.content,
-  ]
-    .join(" ")
-    .toLocaleLowerCase("es");
+  return queryTokens.every((token) => searchFields.haystack.includes(token));
+}
 
-  return haystack.includes(query);
+function getFieldScore(fieldValue, token, scores) {
+  if (!fieldValue) {
+    return 0;
+  }
+
+  if (fieldValue === token) {
+    return scores.exact;
+  }
+
+  if (fieldValue.startsWith(token)) {
+    return scores.prefix;
+  }
+
+  if (fieldValue.includes(token)) {
+    return scores.contains;
+  }
+
+  return 0;
+}
+
+function getSearchScore(searchFields, normalizedQuery, queryTokens) {
+  let score = 0;
+
+  if (normalizedQuery) {
+    score += getFieldScore(searchFields.title, normalizedQuery, {
+      exact: 320,
+      prefix: 260,
+      contains: 220,
+    });
+    score += getFieldScore(searchFields.shortcut, normalizedQuery, {
+      exact: 300,
+      prefix: 240,
+      contains: 180,
+    });
+    score += getFieldScore(searchFields.category, normalizedQuery, {
+      exact: 170,
+      prefix: 130,
+      contains: 100,
+    });
+
+    if (searchFields.content.includes(normalizedQuery)) {
+      score += 60;
+    }
+  }
+
+  queryTokens.forEach((token) => {
+    score += getFieldScore(searchFields.title, token, {
+      exact: 160,
+      prefix: 130,
+      contains: 100,
+    });
+    score += getFieldScore(searchFields.shortcut, token, {
+      exact: 140,
+      prefix: 110,
+      contains: 90,
+    });
+    score += getFieldScore(searchFields.category, token, {
+      exact: 80,
+      prefix: 60,
+      contains: 40,
+    });
+
+    if (searchFields.content.includes(token)) {
+      score += 24;
+    }
+  });
+
+  return score;
 }
 
 function matchesView(template, activeView) {
@@ -153,19 +244,43 @@ function alphaCompare(left, right) {
 }
 
 export function filterAndSortTemplates(templates = [], options = {}) {
-  const normalizedQuery = options.query?.trim().toLocaleLowerCase("es") || "";
+  const normalizedQuery = normalizeSearchText(options.query || "");
+  const queryTokens = getQueryTokens(normalizedQuery);
   const activeView = options.activeView || SPECIAL_VIEWS.all;
 
-  const filtered = templates.filter(
-    (template) => matchesView(template, activeView) && matchesQuery(template, normalizedQuery),
-  );
+  const filtered = templates
+    .map((template) => ({
+      template,
+      searchFields: normalizedQuery ? buildSearchFields(template) : null,
+    }))
+    .filter(({ template, searchFields }) => {
+      if (!matchesView(template, activeView)) {
+        return false;
+      }
+
+      return normalizedQuery ? matchesQuery(searchFields, queryTokens) : true;
+    });
 
   if (normalizedQuery) {
-    return filtered.sort(alphaCompare);
+    return filtered
+      .sort((left, right) => {
+        const scoreDifference =
+          getSearchScore(right.searchFields, normalizedQuery, queryTokens) -
+          getSearchScore(left.searchFields, normalizedQuery, queryTokens);
+
+        if (scoreDifference !== 0) {
+          return scoreDifference;
+        }
+
+        return alphaCompare(left.template, right.template);
+      })
+      .map(({ template }) => template);
   }
 
+  const plainFiltered = filtered.map(({ template }) => template);
+
   if (activeView === SPECIAL_VIEWS.recent) {
-    return filtered.sort((left, right) => {
+    return plainFiltered.sort((left, right) => {
       const leftDate = left.lastCopiedAt ? new Date(left.lastCopiedAt).getTime() : 0;
       const rightDate = right.lastCopiedAt ? new Date(right.lastCopiedAt).getTime() : 0;
 
@@ -181,7 +296,7 @@ export function filterAndSortTemplates(templates = [], options = {}) {
     });
   }
 
-  return filtered.sort((left, right) => {
+  return plainFiltered.sort((left, right) => {
     if (left.favorite !== right.favorite) {
       return left.favorite ? -1 : 1;
     }

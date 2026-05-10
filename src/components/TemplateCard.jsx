@@ -20,6 +20,11 @@ export default function TemplateCard({
   const variableCount = variables.length;
   const variableEnabled = hasVariables(template.content);
   const visibleVariables = variables.slice(0, 3);
+  const variableSummaryLabel = `${variableCount} ${variableCount === 1 ? "variable" : "variables"}`;
+  const variableHintLabel =
+    variableCount === 1
+      ? "Variable a completar antes de copiar"
+      : "Variables a completar antes de copiar";
 
   return (
     <article
@@ -36,7 +41,7 @@ export default function TemplateCard({
             {variableEnabled ? (
               <span className="badge-soft text-rose">
                 <Sparkles className="h-3.5 w-3.5" />
-                {variableCount} variables
+                {variableSummaryLabel}
               </span>
             ) : null}
           </div>
@@ -66,7 +71,7 @@ export default function TemplateCard({
           <div className="mb-4 rounded-2xl border border-rose/20 bg-rose/10 p-3">
             <div className="flex items-center gap-2 text-sm font-medium text-white">
               <Sparkles className="h-4 w-4 text-rose" />
-              Variables a completar antes de copiar
+              {variableHintLabel}
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {visibleVariables.map((variableName) => (

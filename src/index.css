@@ -59,11 +59,11 @@ body {
 }
 
 .button-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan/20 transition hover:-translate-y-0.5 hover:bg-cyan/90 disabled:cursor-not-allowed disabled:opacity-60;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan/20 transition hover:-translate-y-0.5 hover:bg-cyan/90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:bg-cyan;
 }
 
 .button-secondary {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:-translate-y-0.5 hover:border-cyan/30 hover:bg-white/10;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:-translate-y-0.5 hover:border-cyan/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-white/10 disabled:hover:bg-white/5;
 }
 
 .button-danger {
