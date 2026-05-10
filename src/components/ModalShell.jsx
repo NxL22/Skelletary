@@ -14,11 +14,19 @@ export default function ModalShell({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6">
+    <div
+      className="fixed inset-0 z-50 flex items-end bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div
         className={`glass-panel animate-rise w-full overflow-hidden rounded-[28px] shadow-glow ${
           wide ? "max-w-5xl" : "max-w-2xl"
         }`}
+        onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-6">
           <div>
