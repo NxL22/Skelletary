@@ -18,6 +18,7 @@ La app debe sentirse premium, profesional y extremadamente util para el trabajo 
 - Biblioteca personal: mantenida por cada usuario dentro de su cuenta
 - Exportacion: deshabilitada para todos por ahora
 - Importacion permitida: CSV y Excel
+- Deploy web: GitHub Pages debe recibir `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` como secrets del repositorio para no publicar la app en modo local
 
 ## Reglas no negociables
 

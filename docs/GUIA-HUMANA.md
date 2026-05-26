@@ -156,6 +156,20 @@ SKELLETARY_APP_URL=http://localhost:5173
 
 Sin `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY` el script no puede crear usuarios.
 
+### Despliegue en GitHub Pages
+
+Para que `skelletary.com` publique la misma app que ves localmente, GitHub Actions tambien necesita:
+
+```env
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+Estas dos variables no se leen desde tu PC cuando Pages compila en GitHub.
+Hay que cargarlas como secrets del repositorio y consumirlas en el workflow de deploy.
+
+Si faltan, el deploy igual termina correctamente, pero la app publicada entra en modo local y parece que "no tomo" los cambios de acceso, login o biblioteca en la nube.
+
 ## Importacion para usuarios no tecnicos
 
 La prioridad real del producto es importar sin pedir JSON.
