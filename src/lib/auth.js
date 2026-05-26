@@ -143,21 +143,43 @@ export async function ensureUserProfile(user) {
     return;
   }
 
-  // Si la cuenta existe en Auth pero aun no tiene perfil publico,
-  // la creamos sin tocar estados ya activados manualmente.
-  const { error } = await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      email: user.email || "",
-      access_status: "pending",
-    },
-    {
-      onConflict: "id",
-      ignoreDuplicates: true,
-    },
-  );
+  const { data: existingProfile, error: readError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
 
-  if (error) {
+  if (readError) {
+    throw readError;
+  }
+
+  if (existingProfile) {
+    return;
+  }
+
+  // El trigger de Auth deberia crear esta fila al alta. Solo intentamos
+  // repararla en clientes viejos donde la cuenta quedo sin perfil publico.
+  const { error } = await supabase.from("profiles").insert({
+    id: user.id,
+    email: user.email || "",
+    access_status: "pending",
+  });
+
+  if (!error) {
+    return;
+  }
+
+  const { data: repairedProfile, error: repairedReadError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (repairedReadError) {
+    throw repairedReadError;
+  }
+
+  if (!repairedProfile) {
     throw error;
   }
 }
