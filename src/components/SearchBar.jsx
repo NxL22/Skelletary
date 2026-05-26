@@ -1,4 +1,4 @@
-import { CircleX, Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 export default function SearchBar({
   value,
@@ -12,10 +12,17 @@ export default function SearchBar({
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan" />
           <input
-            type="search"
+            // Usamos text en vez de search para evitar la X nativa del navegador
+            // y dejar un unico control de limpieza consistente en toda la app.
+            type="text"
             value={value}
             onChange={(event) => onChange(event.target.value)}
             placeholder="Buscar por titulo, categoria, shortcut o contenido..."
+            spellCheck={false}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            enterKeyHint="search"
             className="field-shell w-full pr-14 text-base"
             style={{ paddingLeft: "2.69em" }}
           />
@@ -23,10 +30,10 @@ export default function SearchBar({
             <button
               type="button"
               onClick={() => onChange("")}
-              className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-slate-900/85 text-slate-400 shadow-[0_10px_25px_rgba(15,23,42,0.28)] transition duration-200 hover:scale-105 hover:border-rose/40 hover:bg-rose/15 hover:text-rose focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/60"
+              className="absolute right-3 top-1/2 inline-flex h-8.5 w-8.5 -translate-y-1/2 items-center justify-center rounded-full border border-white/8 bg-white/[0.045] text-slate-400 backdrop-blur-sm transition duration-200 hover:border-cyan/30 hover:bg-cyan/10 hover:text-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/60"
               aria-label="Limpiar busqueda"
             >
-              <CircleX className="h-[18px] w-[18px]" />
+              <X className="h-4 w-4" strokeWidth={2.2} />
             </button>
           ) : null}
         </div>

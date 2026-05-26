@@ -1,5 +1,12 @@
-import { FileJson, FileText, RotateCcw, ShieldCheck, Upload, X } from "lucide-react";
-import { useRef } from "react";
+import {
+  BadgeInfo,
+  FileSpreadsheet,
+  KeyRound,
+  Lock,
+  ShieldCheck,
+  UserRound,
+  X,
+} from "lucide-react";
 import ModalShell from "./ModalShell";
 
 function ActionCard({ title, description, children }) {
@@ -15,101 +22,121 @@ function ActionCard({ title, description, children }) {
 export default function SettingsModal({
   open,
   onClose,
+  accessState,
+  appVersion,
+  canImport,
+  canManagePassword,
   editUnlocked,
-  onExportJson,
-  onImportFile,
-  onExportMarkdown,
-  onRestoreDefaults,
+  profile,
+  onBlockedExport,
   onOpenChangePin,
+  onOpenChangePassword,
+  onOpenImport,
+  onSignOut,
 }) {
-  const inputRef = useRef(null);
-
   return (
     <ModalShell
       open={open}
       title="Ajustes"
-      subtitle="Todo se guarda localmente en este navegador."
+      subtitle="Cuenta, importacion y controles locales del espacio de trabajo."
       onClose={onClose}
     >
       <div className="space-y-4">
         <ActionCard
-          title="Backups"
-          description="Exporta un respaldo JSON completo o importa uno existente para restaurar la biblioteca."
+          title="Cuenta y acceso"
+          description="Aqui queda visible el estado comercial de tu acceso y los controles de sesion."
         >
-          <button type="button" onClick={onExportJson} className="button-secondary">
-            <FileJson className="h-4 w-4" />
-            Exportar JSON
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+            <div className="font-medium text-white">{profile?.email || "Sin sesion activa"}</div>
+            <div className="mt-1">{accessState?.label || "Acceso pendiente"}</div>
+            <div className="mt-1">
+              Biblioteca oficial:{" "}
+              {profile?.hasCoreLibrary === false ? "no compartida para esta cuenta" : "compartida"}
+            </div>
+          </div>
+
+          <button type="button" onClick={onSignOut} className="button-secondary">
+            <UserRound className="h-4 w-4" />
+            Cerrar sesion
           </button>
 
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={onOpenChangePassword}
             className="button-secondary"
-            disabled={!editUnlocked}
+            disabled={!canManagePassword}
           >
-            <Upload className="h-4 w-4" />
-            Importar backup
-          </button>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                onImportFile(file);
-              }
-              event.target.value = "";
-            }}
-          />
-        </ActionCard>
-
-        <ActionCard
-          title="Exportación para GPT"
-          description="Descarga todas las plantillas agrupadas por categoría en Markdown."
-        >
-          <button type="button" onClick={onExportMarkdown} className="button-secondary">
-            <FileText className="h-4 w-4" />
-            Exportar Markdown
+            <KeyRound className="h-4 w-4" />
+            Cambiar contraseña
           </button>
         </ActionCard>
 
         <ActionCard
-          title="Mantenimiento"
-          description="Restaura la base original y administra el PIN local del modo edición."
+          title="Importar a mi biblioteca"
+          description="Sube plantillas desde Excel o CSV. Se importan a tu biblioteca personal, nunca a la biblioteca oficial."
         >
           <button
             type="button"
-            onClick={onRestoreDefaults}
-            className="button-secondary"
-            disabled={!editUnlocked}
+            onClick={onOpenImport}
+            className="button-primary"
+            disabled={!canImport || !editUnlocked}
           >
-            <RotateCcw className="h-4 w-4" />
-            Restaurar plantillas base
+            <FileSpreadsheet className="h-4 w-4" />
+            Importar Excel o CSV
           </button>
 
+          {!editUnlocked ? (
+            <div className="rounded-2xl border border-rose/20 bg-rose/10 px-4 py-3 text-sm text-slate-200">
+              Desbloquea la edicion con tu PIN local antes de importar.
+            </div>
+          ) : null}
+        </ActionCard>
+
+        <ActionCard
+          title="Proteccion local"
+          description="El PIN sigue funcionando como una barrera local para evitar cambios accidentales en tu biblioteca personal."
+        >
           <button
             type="button"
             onClick={onOpenChangePin}
             className="button-secondary"
-            disabled={!editUnlocked}
+            disabled={!canImport || !editUnlocked}
           >
             <ShieldCheck className="h-4 w-4" />
             Cambiar PIN
           </button>
 
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+            Version actual: {appVersion}
+          </div>
+        </ActionCard>
+
+        <ActionCard
+          title="Exportacion deshabilitada"
+          description="En esta fase del producto nadie puede sacar datos desde la app. Solo se permite cargar informacion hacia tu biblioteca personal."
+        >
+          <button type="button" onClick={onBlockedExport} className="button-secondary">
+            <Lock className="h-4 w-4" />
+            Intentar exportar
+          </button>
+
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
+            <div className="flex items-center gap-2 font-medium">
+              <BadgeInfo className="h-4 w-4" />
+              Regla actual del producto
+            </div>
+            <p className="mt-2 leading-6">
+              Puedes meter plantillas a Skelletary, pero por ahora no puedes sacar la data desde la app.
+            </p>
+          </div>
+        </ActionCard>
+
+        <div className="flex justify-end">
           <button type="button" onClick={onClose} className="button-primary">
             <X className="h-4 w-4" />
             Cerrar ajustes
           </button>
-        </ActionCard>
-
-        {!editUnlocked ? (
-          <p className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-slate-400">
-            Importar backup, restaurar plantillas base y cambiar PIN requieren edición desbloqueada.
-          </p>
-        ) : null}
+        </div>
       </div>
     </ModalShell>
   );

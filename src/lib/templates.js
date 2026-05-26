@@ -54,6 +54,9 @@ export function normalizeTemplate(template, index = 0) {
     createdAt,
     updatedAt: template.updatedAt || createdAt,
     lastCopiedAt: template.lastCopiedAt || null,
+    libraryOrigin: template.libraryOrigin || "core",
+    isUserOwned: Boolean(template.isUserOwned),
+    sourceType: template.sourceType || "manual",
   };
 }
 
@@ -74,6 +77,9 @@ export function createTemplate(input) {
     createdAt: timestamp,
     updatedAt: timestamp,
     lastCopiedAt: null,
+    libraryOrigin: input.libraryOrigin || "personal",
+    isUserOwned: input.isUserOwned ?? true,
+    sourceType: input.sourceType || "manual",
   };
 }
 
@@ -86,6 +92,9 @@ export function updateTemplateRecord(template, changes) {
     shortcut: changes.shortcut?.trim() ?? template.shortcut,
     content: changes.content?.trim() ?? template.content,
     updatedAt: nowIso(),
+    libraryOrigin: changes.libraryOrigin ?? template.libraryOrigin,
+    isUserOwned: changes.isUserOwned ?? template.isUserOwned,
+    sourceType: changes.sourceType ?? template.sourceType,
   };
 }
 
@@ -101,6 +110,10 @@ export function duplicateTemplateRecord(template) {
     createdAt: timestamp,
     updatedAt: timestamp,
     lastCopiedAt: null,
+    libraryOrigin: "personal",
+    isUserOwned: true,
+    sourceType:
+      template.libraryOrigin === "core" ? "duplicated_from_core" : template.sourceType || "manual",
   };
 }
 

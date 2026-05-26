@@ -1,12 +1,15 @@
 import {
   Bone,
   CircleHelp,
+  Import,
   Lock,
+  LogOut,
   Plus,
   Settings2,
   ShieldCheck,
   Sparkles,
   Unlock,
+  UserRound,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -54,7 +57,7 @@ function HeroMascot({ missing, onMissing }) {
         </div>
         <p className="font-display text-lg font-semibold text-slate-900">Skelly lista para copiar</p>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Si luego agregas o reemplazas <span className="font-mono text-cyan">/public/imagenes de Skelly/skelly-bust.png</span>, este espacio la mostrará automáticamente.
+          Si luego agregas o reemplazas <span className="font-mono text-cyan">/public/imagenes de Skelly/skelly-bust.png</span>, este espacio la mostrara automaticamente.
         </p>
       </div>
     );
@@ -70,7 +73,7 @@ function HeroMascot({ missing, onMissing }) {
       </div>
       <img
         src={`${SKELLY_ASSET_BASE}/skelly-bust.png`}
-        alt="Skelly, asistente radiológica"
+        alt="Skelly, asistente radiologica"
         className="relative z-10 h-full w-full object-cover object-[center_14%] scale-[1.08] drop-shadow-[0_24px_35px_rgba(85,120,155,0.35)]"
         onError={onMissing}
       />
@@ -79,21 +82,33 @@ function HeroMascot({ missing, onMissing }) {
 }
 
 export default function Header({
+  accountEmail,
+  accessState,
   addTemplateDisabled,
+  backendConfigured,
   editUnlocked,
   editingEnabled,
+  hasSession,
   settingsDisabled,
   unlockDisabled,
   unlockExpiresAt,
+  onAccountClick,
   onHelpClick,
   onUnlockClick,
   onLockClick,
   onNewTemplate,
   onSettingsClick,
+  onSignOut,
 }) {
   const [brandMissing, setBrandMissing] = useState(false);
   const [heroMissing, setHeroMissing] = useState(false);
   const remainingLabel = getRemainingTimeLabel(unlockExpiresAt);
+  const accountLabel = accountEmail || (backendConfigured ? "Sin sesion" : "Modo local");
+  const accountActionLabel = hasSession
+    ? "Gestionar cuenta"
+    : backendConfigured
+      ? "Entrar"
+      : "Modo local";
 
   return (
     <header className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/60 p-5 shadow-glow sm:p-7">
@@ -109,13 +124,13 @@ export default function Header({
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-cyan">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Asistente radiológico
+                  Asistente radiologico
                 </div>
                 <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
                   Skelletary
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                  Repositorio de plantillas radiológicas
+                  Repositorio de plantillas radiologicas
                 </p>
               </div>
             </div>
@@ -130,18 +145,23 @@ export default function Header({
                 <p className="mt-2 font-display text-lg text-white">Variables completables</p>
               </div>
               <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Control</p>
-                <p className="mt-2 font-display text-lg text-white">Backup y PIN local</p>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Cuenta</p>
+                <p className="mt-2 truncate font-display text-lg text-white">{accountLabel}</p>
               </div>
             </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
+            <button type="button" onClick={onAccountClick} className="button-secondary">
+              <UserRound className="h-4 w-4" />
+              {accountActionLabel}
+            </button>
+
             <button
               type="button"
               onClick={onSettingsClick}
               disabled={settingsDisabled}
-              title={settingsDisabled ? "Disponible cuando el proyecto tenga backend" : undefined}
+              title={settingsDisabled ? "Necesitas una cuenta activa para abrir Ajustes" : undefined}
               className="button-secondary"
             >
               <Settings2 className="h-4 w-4" />
@@ -154,7 +174,7 @@ export default function Header({
                   type="button"
                   onClick={onNewTemplate}
                   disabled={addTemplateDisabled}
-                  title={addTemplateDisabled ? "Disponible cuando el proyecto tenga backend" : undefined}
+                  title={addTemplateDisabled ? "Necesitas una cuenta activa para crear plantillas" : undefined}
                   className="button-primary"
                 >
                   <Plus className="h-4 w-4" />
@@ -162,7 +182,7 @@ export default function Header({
                 </button>
                 <button type="button" onClick={onLockClick} className="button-secondary">
                   <Lock className="h-4 w-4" />
-                  Bloquear edición
+                  Bloquear edicion
                 </button>
               </>
             ) : (
@@ -170,13 +190,20 @@ export default function Header({
                 type="button"
                 onClick={onUnlockClick}
                 disabled={unlockDisabled}
-                title={unlockDisabled ? "Disponible cuando el proyecto tenga backend" : undefined}
+                title={unlockDisabled ? "Necesitas una cuenta activa para editar" : undefined}
                 className="button-primary"
               >
                 <Unlock className="h-4 w-4" />
-                Desbloquear edición
+                Desbloquear edicion
               </button>
             )}
+
+            {hasSession ? (
+              <button type="button" onClick={onSignOut} className="button-secondary">
+                <LogOut className="h-4 w-4" />
+                Salir
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -188,18 +215,18 @@ export default function Header({
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Skelly</p>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-white">
-                  Tu asistente radiológica
+                  Tu asistente radiologica
                 </h2>
                 <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
-                  Skelly te ayuda a completar tus plantillas con variables inteligentes y a mantener tu trabajo seguro con backups automáticos y un PIN local.
+                  Skelly te ayuda a encontrar, completar e importar plantillas sin friccion tecnica.
                 </p>
                 <button
                   type="button"
-                  title="Abre una guía rápida para aprender a usar Skelletary"
+                  title="Abre una guia rapida para aprender a usar Skelletary"
                   onClick={onHelpClick}
                   className="button-secondary mt-4"
                 >
-                  Skelly te guía
+                  Skelly te guia
                   <CircleHelp className="h-4 w-4" />
                 </button>
               </div>
@@ -216,12 +243,23 @@ export default function Header({
                 ) : (
                   <Lock className="h-3.5 w-3.5" />
                 )}
-                {editingEnabled && editUnlocked
-                  ? `Edición desbloqueada${remainingLabel ? ` · ${remainingLabel}` : ""}`
-                  : editingEnabled
-                    ? "Modo lectura"
-                    : "Edición en pausa"}
+                {backendConfigured
+                  ? editingEnabled
+                    ? editUnlocked
+                      ? `Edicion desbloqueada${remainingLabel ? ` · ${remainingLabel}` : ""}`
+                      : "Modo lectura"
+                    : accessState?.label || "Acceso pendiente"
+                  : "Modo local"}
               </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="badge-soft">
+                <Import className="h-3.5 w-3.5 text-cyan" />
+                Excel y CSV para usuarios
+              </span>
+              <span className="badge-soft">Biblioteca oficial separada</span>
+              <span className="badge-soft">Sin exportacion por ahora</span>
             </div>
 
             <HeroMascot missing={heroMissing} onMissing={() => setHeroMissing(true)} />

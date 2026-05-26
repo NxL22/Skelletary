@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Heart, Layers3, ShieldAlert } from "lucide-react";
 import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
@@ -14,21 +14,50 @@ import EmptyState from "./components/EmptyState";
 import HelpModal from "./components/HelpModal";
 import ToastStack from "./components/ToastStack";
 import ScrollToTopButton from "./components/ScrollToTopButton";
+import AuthScreen from "./components/AuthScreen";
+import ImportTemplatesModal from "./components/ImportTemplatesModal";
+import PasswordChangeModal from "./components/PasswordChangeModal";
 import defaultTemplates from "./data/defaultTemplates.json";
 import { copyText, playCopyFeedback } from "./lib/clipboard";
-import { exportTemplatesToMarkdown } from "./lib/exportMarkdown";
+import { resolveAccessState } from "./lib/access";
+import {
+  AUTH_REDIRECT_MODE,
+  clearAuthRedirectModeFromUrl,
+  ensureUserProfile,
+  getCurrentSession,
+  readAuthRedirectModeFromUrl,
+  sendPasswordResetEmail,
+  signInWithPassword,
+  signOut,
+  subscribeToAuthChanges,
+  updateUserPassword,
+} from "./lib/auth";
+import {
+  deleteUserTemplateRemote,
+  duplicateToPersonalLibrary,
+  fetchRemoteWorkspace,
+  hasMeaningfulLegacyData,
+  importUserTemplatesRemote,
+  migrateLocalWorkspaceToRemote,
+  saveUserTemplateRemote,
+  upsertTemplateStatsRemote,
+} from "./lib/remoteTemplates";
 import {
   DEFAULT_PIN,
   getEditUnlockExpiresAt,
+  hasCompletedLocalMigration,
   isEditUnlocked,
+  loadCachedSession,
   loadPin,
   loadTemplates,
   lockEdit,
-  resetTemplates,
+  markLocalMigrationCompleted,
+  saveCachedSession,
   savePin,
   saveTemplates,
   unlockEdit,
 } from "./lib/storage";
+import { isSupabaseConfigured } from "./lib/supabaseClient";
 import {
   SPECIAL_VIEWS,
   createTemplate,
@@ -42,12 +71,14 @@ import {
 } from "./lib/templates";
 import { blankVariables, fillVariables, hasVariables } from "./lib/variables";
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "2.0.0";
 const TEMPLATES_PER_PAGE = 60;
-const EDITING_ENABLED = false;
-const SETTINGS_ENABLED = false;
-const ADD_TEMPLATE_ENABLED = false;
-const BACKEND_DISABLED_TITLE = "Disponible cuando el proyecto tenga backend";
+const LOCAL_MODE_ACCESS = {
+  status: "active",
+  hasAccess: true,
+  label: "Modo local",
+  detail: "La app esta funcionando con cache local mientras terminas la configuracion del backend.",
+};
 
 function mergeStoredWithSeededTemplates(storedTemplates, seededTemplates) {
   const storedIds = new Set(storedTemplates.map((template) => template.id));
@@ -57,11 +88,17 @@ function mergeStoredWithSeededTemplates(storedTemplates, seededTemplates) {
     return storedTemplates;
   }
 
+  // Conservamos lo que el navegador ya conocia, pero reinyectamos el catalogo oficial
+  // que falte para no perder plantillas base cuando la version del producto crece.
   return [...storedTemplates, ...missingSeededTemplates];
 }
 
-function getInitialTemplates() {
-  const seededTemplates = normalizeTemplates(defaultTemplates);
+function getInitialLocalTemplates() {
+  const seededTemplates = normalizeTemplates(defaultTemplates).map((template) => ({
+    ...template,
+    libraryOrigin: "core",
+    isUserOwned: false,
+  }));
   const storedTemplates = loadTemplates();
 
   if (storedTemplates?.length) {
@@ -69,26 +106,8 @@ function getInitialTemplates() {
     return mergeStoredWithSeededTemplates(normalizedStoredTemplates, seededTemplates);
   }
 
-  resetTemplates(seededTemplates);
+  saveTemplates(seededTemplates);
   return seededTemplates;
-}
-
-function buildFileDateStamp() {
-  return new Intl.DateTimeFormat("sv-SE", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-function downloadFile(filename, content, type) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 function getViewHeading(activeView) {
@@ -108,7 +127,9 @@ function getViewHeading(activeView) {
 }
 
 export default function App() {
-  const [templates, setTemplates] = useState(getInitialTemplates);
+  const backendConfigured = isSupabaseConfigured();
+  const [templates, setTemplates] = useState(getInitialLocalTemplates);
+  const [legacyTemplatesSnapshot] = useState(() => loadTemplates() || []);
   const [searchValue, setSearchValue] = useState("");
   const deferredQuery = useDeferredValue(searchValue);
   const [activeView, setActiveView] = useState(SPECIAL_VIEWS.all);
@@ -119,12 +140,32 @@ export default function App() {
   const [pinMode, setPinMode] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [editUnlocked, setEditUnlocked] = useState(EDITING_ENABLED ? isEditUnlocked() : false);
-  const [unlockExpiresAt, setUnlockExpiresAt] = useState(
-    EDITING_ENABLED ? getEditUnlockExpiresAt() : null,
-  );
+  const [importOpen, setImportOpen] = useState(false);
+  const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
+  const [session, setSession] = useState(() => loadCachedSession());
+  const [authRedirectMode, setAuthRedirectMode] = useState(() => readAuthRedirectModeFromUrl());
+  const [profile, setProfile] = useState(null);
+  const [workspaceLoading, setWorkspaceLoading] = useState(backendConfigured);
+  const [migrationPromptVisible, setMigrationPromptVisible] = useState(false);
+  const [editUnlocked, setEditUnlocked] = useState(isEditUnlocked());
+  const [unlockExpiresAt, setUnlockExpiresAt] = useState(getEditUnlockExpiresAt());
   const [toasts, setToasts] = useState([]);
   const resultsTopRef = useRef(null);
+
+  const accessState = backendConfigured ? resolveAccessState(profile) : LOCAL_MODE_ACCESS;
+  const hasCloudAccess = Boolean(backendConfigured && session?.user?.id && accessState.hasAccess);
+  // Cuando el usuario llega desde un correo de invitacion o recuperacion,
+  // obligamos a mostrar la pantalla de acceso aunque ya exista sesion.
+  const shouldHandlePasswordFlow = Boolean(
+    authRedirectMode === AUTH_REDIRECT_MODE.invite || authRedirectMode === AUTH_REDIRECT_MODE.recovery,
+  );
+  const shouldRenderAuthScreen = Boolean(
+    backendConfigured &&
+      (shouldHandlePasswordFlow || (!workspaceLoading && (!session?.user?.id || !accessState.hasAccess))),
+  );
+  const editingEnabled = hasCloudAccess;
+  const settingsEnabled = hasCloudAccess;
+  const addTemplateEnabled = hasCloudAccess;
 
   const filteredTemplates = filterAndSortTemplates(templates, {
     query: deferredQuery,
@@ -143,20 +184,22 @@ export default function App() {
   const favoriteCount = templates.filter((template) => template.favorite).length;
   const recentCount = templates.filter((template) => template.lastCopiedAt).length;
   const viewHeading = getViewHeading(activeView);
+  const canOfferMigration = useMemo(
+    () =>
+      Boolean(
+        hasCloudAccess &&
+          session?.user?.id &&
+          !hasCompletedLocalMigration(session.user.id) &&
+          hasMeaningfulLegacyData(legacyTemplatesSnapshot),
+      ),
+    [hasCloudAccess, legacyTemplatesSnapshot, session?.user?.id],
+  );
 
   useEffect(() => {
     saveTemplates(templates);
   }, [templates]);
 
   useEffect(() => {
-    if (!EDITING_ENABLED) {
-      lockEdit();
-      setEditUnlocked(false);
-      setUnlockExpiresAt(null);
-      setPinMode((current) => (current === "unlock" ? null : current));
-      return;
-    }
-
     function syncEditState() {
       setEditUnlocked(isEditUnlocked());
       setUnlockExpiresAt(getEditUnlockExpiresAt());
@@ -182,6 +225,122 @@ export default function App() {
       setCurrentPage(resolvedPage);
     }
   }, [currentPage, resolvedPage]);
+
+  useEffect(() => {
+    if (!backendConfigured) {
+      setWorkspaceLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function bootstrapSession() {
+      try {
+        const currentSession = await getCurrentSession();
+
+        if (isMounted) {
+          setSession(currentSession);
+          saveCachedSession(currentSession);
+        }
+      } catch {
+        if (isMounted) {
+          pushToast("No pudimos restaurar la sesion actual.", "error");
+          setWorkspaceLoading(false);
+        }
+      }
+    }
+
+    bootstrapSession();
+
+    const unsubscribe = subscribeToAuthChanges((event, nextSession) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setAuthRedirectMode(AUTH_REDIRECT_MODE.recovery);
+      } else if (event === "SIGNED_IN") {
+        setAuthRedirectMode(readAuthRedirectModeFromUrl());
+      } else if (event === "SIGNED_OUT") {
+        setAuthRedirectMode(AUTH_REDIRECT_MODE.default);
+      }
+
+      setSession(nextSession);
+      saveCachedSession(nextSession);
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [backendConfigured]);
+
+  useEffect(() => {
+    if (!backendConfigured) {
+      return;
+    }
+
+    if (!session?.user?.id) {
+      setProfile(null);
+      setWorkspaceLoading(false);
+      lockEdit();
+      setEditUnlocked(false);
+      setUnlockExpiresAt(null);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadRemoteWorkspace() {
+      setWorkspaceLoading(true);
+
+      try {
+        // Dejamos que el login repare cuentas antiguas o nuevas que aun no tengan
+        // fila en profiles para no depender de una carga manual extra antes de entrar.
+        await ensureUserProfile(session.user);
+        const workspace = await fetchRemoteWorkspace(session.user.id);
+
+        if (!isMounted) {
+          return;
+        }
+
+        const nextAccessState = resolveAccessState(workspace.profile);
+        setProfile(
+          workspace.profile || {
+            id: session.user.id,
+            email: session.user.email || "",
+            hasCoreLibrary: true,
+            accessStatus: "pending",
+            trialStartsAt: null,
+            trialEndsAt: null,
+            subscriptionEndsAt: null,
+          },
+        );
+
+        if (nextAccessState.hasAccess) {
+          setTemplates(workspace.templates);
+        }
+
+        setWorkspaceLoading(false);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        pushToast(
+          error.message || "No pudimos sincronizar tu biblioteca con la nube.",
+          "error",
+        );
+        setWorkspaceLoading(false);
+      }
+    }
+
+    loadRemoteWorkspace();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [backendConfigured, session?.user?.email, session?.user?.id]);
+
+  useEffect(() => {
+    setMigrationPromptVisible(canOfferMigration);
+  }, [canOfferMigration]);
 
   function pushToast(message, tone = "info") {
     const id =
@@ -219,28 +378,111 @@ export default function App() {
     resultsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function handleToggleFavorite(template) {
+  async function refreshRemoteWorkspace() {
+    if (!backendConfigured || !session?.user?.id) {
+      return;
+    }
+
+    const workspace = await fetchRemoteWorkspace(session.user.id);
+    setProfile(
+      workspace.profile || {
+        id: session.user.id,
+        email: session.user.email || "",
+        hasCoreLibrary: true,
+        accessStatus: "pending",
+      },
+    );
+    setTemplates(workspace.templates);
+  }
+
+  async function handleAuthenticate({ email, password }) {
+    await signInWithPassword(email, password);
+    pushToast("Sesion iniciada", "success");
+  }
+
+  async function handlePasswordRecovery(email) {
+    await sendPasswordResetEmail(email);
+    pushToast("Te enviamos el correo para cambiar tu contraseña.", "success");
+  }
+
+  async function handlePasswordUpdate(nextPassword) {
+    await updateUserPassword(nextPassword);
+    clearAuthRedirectModeFromUrl();
+    setAuthRedirectMode(AUTH_REDIRECT_MODE.default);
+    await refreshRemoteWorkspace();
+    pushToast("Tu contraseña ya fue actualizada.", "success");
+  }
+
+  async function handleSignOut() {
+    try {
+      await signOut();
+      clearAuthRedirectModeFromUrl();
+      setAuthRedirectMode(AUTH_REDIRECT_MODE.default);
+      setProfile(null);
+      lockEdit();
+      setEditUnlocked(false);
+      setUnlockExpiresAt(null);
+      pushToast("Sesion cerrada", "info");
+    } catch {
+      pushToast("No pudimos cerrar la sesion.", "error");
+    }
+  }
+
+  async function handleMigrateLocalData() {
+    if (!session?.user?.id) {
+      return;
+    }
+
+    try {
+      await migrateLocalWorkspaceToRemote(session.user.id, legacyTemplatesSnapshot);
+      markLocalMigrationCompleted(session.user.id);
+      setMigrationPromptVisible(false);
+      await refreshRemoteWorkspace();
+      pushToast("Tus datos locales ya quedaron migrados a la nube.", "success");
+    } catch (error) {
+      pushToast(error.message || "No pudimos migrar tus datos locales.", "error");
+    }
+  }
+
+  async function handleToggleFavorite(template) {
+    const nextFavorite = !template.favorite;
+
     setTemplates((current) =>
       current.map((entry) =>
-        entry.id === template.id ? { ...entry, favorite: !entry.favorite } : entry,
+        entry.id === template.id ? { ...entry, favorite: nextFavorite } : entry,
       ),
     );
 
-    pushToast(
-      template.favorite ? "Plantilla quitada de favoritas" : "Plantilla agregada a favoritas",
-      "success",
-    );
+    if (hasCloudAccess && session?.user?.id) {
+      try {
+        await upsertTemplateStatsRemote(session.user.id, template, { favorite: nextFavorite });
+      } catch {
+        pushToast("No pudimos sincronizar favoritas.", "error");
+      }
+    }
+
+    pushToast(nextFavorite ? "Plantilla agregada a favoritas" : "Plantilla quitada de favoritas", "success");
   }
 
   async function handleCopyResult(template, finalText, successMessage) {
     try {
       await copyText(finalText);
       void playCopyFeedback();
+
+      const updatedTemplate = markTemplateCopied(template);
+
       setTemplates((current) =>
-        current.map((entry) =>
-          entry.id === template.id ? markTemplateCopied(entry) : entry,
-        ),
+        current.map((entry) => (entry.id === template.id ? updatedTemplate : entry)),
       );
+
+      if (hasCloudAccess && session?.user?.id) {
+        await upsertTemplateStatsRemote(session.user.id, updatedTemplate, {
+          copyCount: updatedTemplate.copyCount,
+          lastCopiedAt: updatedTemplate.lastCopiedAt,
+          favorite: updatedTemplate.favorite,
+        });
+      }
+
       pushToast(successMessage, "success");
     } catch {
       pushToast("No fue posible copiar la plantilla al portapapeles.", "error");
@@ -283,12 +525,18 @@ export default function App() {
   }
 
   function openEditor(template = null) {
-    if (!ADD_TEMPLATE_ENABLED && !template) {
-      pushToast("Crear plantillas estará disponible cuando el proyecto tenga backend.", "info");
+    if (!editingEnabled) {
+      pushToast("Inicia sesion con acceso vigente para editar tu biblioteca.", "info");
       return;
     }
 
     if (!editUnlocked) {
+      pushToast("Desbloquea la edicion con tu PIN local antes de modificar plantillas.", "info");
+      return;
+    }
+
+    if (template && !template.isUserOwned) {
+      pushToast("Las plantillas oficiales se editan desde VS Code y luego se publican.", "info");
       return;
     }
 
@@ -296,136 +544,114 @@ export default function App() {
     setEditorState({ open: true, template });
   }
 
-  function handleSaveTemplate(form, originalTemplate) {
-    if (originalTemplate) {
-      setTemplates((current) =>
-        current.map((entry) =>
-          entry.id === originalTemplate.id
-            ? updateTemplateRecord(entry, form)
-            : entry,
-        ),
-      );
-      pushToast("Plantilla actualizada", "success");
-    } else {
-      const template = createTemplate(form);
-      setTemplates((current) => [template, ...current]);
-      setCurrentPage(1);
-      pushToast("Plantilla creada", "success");
-    }
-
-    closeEditor();
-  }
-
-  function handleDuplicate(template) {
-    if (!editUnlocked) {
-      return;
-    }
-
-    const duplicate = duplicateTemplateRecord(template);
-    setTemplates((current) => [duplicate, ...current]);
-    setCurrentPage(1);
-    closeEditor();
-    setSelectedTemplateId(duplicate.id);
-    pushToast("Plantilla duplicada", "success");
-  }
-
-  function handleDelete(template) {
-    if (!editUnlocked) {
-      return;
-    }
-
-    if (!window.confirm(`Eliminar la plantilla "${template.title}"?`)) {
-      return;
-    }
-
-    setTemplates((current) => current.filter((entry) => entry.id !== template.id));
-    closeEditor();
-    setSelectedTemplateId(null);
-    pushToast("Plantilla eliminada", "success");
-  }
-
-  function handleExportJson() {
-    const payload = {
-      templates,
-      exportedAt: new Date().toISOString(),
-      appVersion: APP_VERSION,
-    };
-
-    downloadFile(
-      `skelletary-backup-${buildFileDateStamp()}.json`,
-      JSON.stringify(payload, null, 2),
-      "application/json;charset=utf-8",
-    );
-    pushToast("Backup exportado", "success");
-  }
-
-  async function handleImportFile(file) {
-    if (!editUnlocked) {
-      pushToast("Importar backups estará disponible cuando el proyecto tenga backend.", "error");
+  async function handleSaveTemplate(form, originalTemplate) {
+    if (!session?.user?.id) {
+      pushToast("Debes iniciar sesion para guardar plantillas personales.", "error");
       return;
     }
 
     try {
-      const text = await file.text();
-      const payload = JSON.parse(text);
+      const localTemplate = originalTemplate
+        ? updateTemplateRecord(originalTemplate, form)
+        : createTemplate({
+            ...form,
+            libraryOrigin: "personal",
+            isUserOwned: true,
+            sourceType: "manual",
+          });
 
-      if (!Array.isArray(payload.templates)) {
-        throw new Error("Formato invalido");
+      const savedTemplate = await saveUserTemplateRemote(session.user.id, localTemplate, originalTemplate);
+
+      if (originalTemplate) {
+        setTemplates((current) =>
+          current.map((entry) => (entry.id === originalTemplate.id ? savedTemplate : entry)),
+        );
+        pushToast("Plantilla personal actualizada", "success");
+      } else {
+        setTemplates((current) => [savedTemplate, ...current]);
+        setCurrentPage(1);
+        pushToast("Plantilla personal creada", "success");
       }
 
-      if (!window.confirm("Reemplazar las plantillas actuales por las del backup?")) {
-        return;
-      }
+      closeEditor();
+    } catch (error) {
+      pushToast(error.message || "No pudimos guardar la plantilla.", "error");
+    }
+  }
 
-      const importedTemplates = normalizeTemplates(payload.templates);
-      setTemplates(importedTemplates);
-      setActiveView(SPECIAL_VIEWS.all);
+  async function handleDuplicate(template) {
+    if (!session?.user?.id) {
+      pushToast("Debes iniciar sesion para duplicar plantillas.", "error");
+      return;
+    }
+
+    try {
+      const duplicate = hasCloudAccess
+        ? await duplicateToPersonalLibrary(session.user.id, template)
+        : duplicateTemplateRecord(template);
+
+      setTemplates((current) => [duplicate, ...current]);
       setCurrentPage(1);
-      setSearchValue("");
+      closeEditor();
+      setSelectedTemplateId(duplicate.id);
+      pushToast(
+        template.libraryOrigin === "core"
+          ? "Plantilla oficial duplicada a tu biblioteca personal"
+          : "Plantilla duplicada",
+        "success",
+      );
+    } catch (error) {
+      pushToast(error.message || "No pudimos duplicar la plantilla.", "error");
+    }
+  }
+
+  async function handleDelete(template) {
+    if (!template.isUserOwned) {
+      pushToast("Las plantillas oficiales no se eliminan desde la app.", "info");
+      return;
+    }
+
+    if (!window.confirm(`Eliminar la plantilla "${template.title}" de tu biblioteca personal?`)) {
+      return;
+    }
+
+    try {
+      await deleteUserTemplateRemote(template.id);
+      setTemplates((current) => current.filter((entry) => entry.id !== template.id));
+      closeEditor();
       setSelectedTemplateId(null);
-      pushToast("Backup importado correctamente", "success");
-    } catch {
-      pushToast("El archivo no contiene un backup valido.", "error");
+      pushToast("Plantilla personal eliminada", "success");
+    } catch (error) {
+      pushToast(error.message || "No pudimos eliminar la plantilla.", "error");
     }
   }
 
-  function handleExportMarkdown() {
-    downloadFile(
-      "Plantillas_Radiologia_Skelletary.md",
-      exportTemplatesToMarkdown(templates),
-      "text/markdown;charset=utf-8",
-    );
-    pushToast("Markdown exportado", "success");
-  }
+  async function handleImportTemplates({ fileName, importKind, rows }) {
+    if (!session?.user?.id) {
+      throw new Error("Debes iniciar sesion para importar plantillas.");
+    }
 
-  function handleRestoreDefaults() {
     if (!editUnlocked) {
-      pushToast("Restaurar plantillas estará disponible cuando el proyecto tenga backend.", "error");
-      return;
+      throw new Error("Desbloquea la edicion con tu PIN local antes de importar.");
     }
 
-    if (!window.confirm("Restaurar las plantillas base y reemplazar los cambios locales?")) {
-      return;
-    }
+    const importedTemplates = await importUserTemplatesRemote({
+      userId: session.user.id,
+      fileName,
+      importKind,
+      rows,
+    });
 
-    const seededTemplates = normalizeTemplates(defaultTemplates);
-    resetTemplates(seededTemplates);
-    setTemplates(seededTemplates);
-    setActiveView(SPECIAL_VIEWS.all);
+    setTemplates((current) => [...importedTemplates, ...current]);
     setCurrentPage(1);
-    setSearchValue("");
-    setSelectedTemplateId(null);
-    pushToast("Plantillas base restauradas", "success");
+    pushToast(`${importedTemplates.length} plantillas importadas a tu biblioteca personal.`, "success");
+  }
+
+  function handleBlockedExport() {
+    pushToast("La exportacion esta deshabilitada para todos en esta fase del producto.", "info");
   }
 
   async function handlePinSubmit(form, mode) {
-    if (mode !== "change" && !EDITING_ENABLED) {
-      return {
-        success: false,
-        message: "La edición estará disponible cuando el proyecto tenga backend.",
-      };
-    }
-
     if (mode === "change") {
       if (form.currentPin !== loadPin()) {
         return { success: false, message: "El PIN actual no coincide." };
@@ -442,6 +668,13 @@ export default function App() {
       savePin(form.nextPin);
       pushToast("PIN actualizado", "success");
       return { success: true };
+    }
+
+    if (!hasCloudAccess) {
+      return {
+        success: false,
+        message: "Necesitas una cuenta activa para desbloquear la edicion.",
+      };
     }
 
     if (form.pin !== (loadPin() || DEFAULT_PIN)) {
@@ -462,31 +695,92 @@ export default function App() {
     pushToast("Edicion bloqueada", "info");
   }
 
+  async function handleAccountPasswordChange(nextPassword) {
+    await updateUserPassword(nextPassword);
+    pushToast("Contraseña de acceso actualizada.", "success");
+    setPasswordChangeOpen(false);
+  }
+
+  if (backendConfigured && workspaceLoading) {
+    return (
+      <>
+        <AuthScreen
+          accessState={accessState}
+          backendConfigured={backendConfigured}
+          authMode={authRedirectMode}
+          loading
+          session={session}
+          onPasswordRecovery={handlePasswordRecovery}
+          onSubmit={handleAuthenticate}
+          onSignOut={handleSignOut}
+          onUpdatePassword={handlePasswordUpdate}
+        />
+        <ToastStack toasts={toasts} />
+      </>
+    );
+  }
+
+  if (shouldRenderAuthScreen) {
+    return (
+      <>
+        <AuthScreen
+          accessState={accessState}
+          backendConfigured={backendConfigured}
+          authMode={authRedirectMode}
+          session={session}
+          onPasswordRecovery={handlePasswordRecovery}
+          onSubmit={handleAuthenticate}
+          onSignOut={handleSignOut}
+          onUpdatePassword={handlePasswordUpdate}
+        />
+        <ToastStack toasts={toasts} />
+      </>
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(123,223,246,0.08),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(184,181,255,0.08),transparent_20%),radial-gradient(circle_at_bottom_right,rgba(246,171,200,0.08),transparent_24%)]" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <Header
-          addTemplateDisabled={!ADD_TEMPLATE_ENABLED}
+          accountEmail={profile?.email || session?.user?.email || ""}
+          accessState={accessState}
+          addTemplateDisabled={!addTemplateEnabled}
+          backendConfigured={backendConfigured}
           editUnlocked={editUnlocked}
-          editingEnabled={EDITING_ENABLED}
-          settingsDisabled={!SETTINGS_ENABLED}
-          unlockDisabled={!EDITING_ENABLED}
+          editingEnabled={editingEnabled}
+          hasSession={Boolean(session?.user?.id)}
+          settingsDisabled={!settingsEnabled}
+          unlockDisabled={!editingEnabled}
           unlockExpiresAt={unlockExpiresAt}
-          onHelpClick={() => setHelpOpen(true)}
-          onUnlockClick={() => setPinMode("unlock")}
-          onLockClick={handleLockEdit}
-          onNewTemplate={() => openEditor(null)}
-          onSettingsClick={() => {
-            if (!SETTINGS_ENABLED) {
-              pushToast("Ajustes estará disponible cuando el proyecto tenga backend.", "info");
+          onAccountClick={() => {
+            if (!backendConfigured) {
+              pushToast("Configura Supabase para activar el acceso con correo.", "info");
               return;
             }
 
             setSettingsOpen(true);
           }}
+          onHelpClick={() => setHelpOpen(true)}
+          onUnlockClick={() => setPinMode("unlock")}
+          onLockClick={handleLockEdit}
+          onNewTemplate={() => openEditor(null)}
+          onSettingsClick={() => setSettingsOpen(true)}
+          onSignOut={handleSignOut}
         />
+
+        {backendConfigured ? (
+          <div className="rounded-[24px] border border-cyan/20 bg-cyan/10 px-4 py-3 text-sm text-slate-100">
+            <span className="font-medium text-white">Estado de acceso:</span> {accessState.label}.{" "}
+            <span className="text-slate-300">{accessState.detail}</span>
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
+            Supabase aun no esta configurado. La app sigue mostrando la biblioteca oficial local
+            para que puedas continuar el desarrollo y la curacion del catalogo.
+          </div>
+        )}
 
         <SearchBar
           value={searchValue}
@@ -494,6 +788,32 @@ export default function App() {
           resultCount={filteredTemplates.length}
           templateCount={templates.length}
         />
+
+        {migrationPromptVisible ? (
+          <div className="glass-panel rounded-[24px] border border-cyan/20 bg-cyan/10 p-4 shadow-card">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium text-white">Encontramos datos locales para migrar</p>
+                <p className="mt-1 text-sm leading-6 text-slate-200">
+                  Puedes subir favoritas, recents y plantillas personales guardadas en este
+                  navegador a tu cuenta en la nube.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMigrationPromptVisible(false)}
+                  className="button-secondary"
+                >
+                  Ahora no
+                </button>
+                <button type="button" onClick={handleMigrateLocalData} className="button-primary">
+                  Importar datos locales
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <CategorySidebar
@@ -524,9 +844,17 @@ export default function App() {
                 <div className="flex flex-wrap gap-2">
                   <span className="badge-soft">{favoriteCount} favoritas</span>
                   <span className="badge-soft">{recentCount} recientes</span>
-                  {totalPages > 1 ? <span className="badge-soft">Página {resolvedPage}/{totalPages}</span> : null}
+                  {totalPages > 1 ? (
+                    <span className="badge-soft">
+                      Pagina {resolvedPage}/{totalPages}
+                    </span>
+                  ) : null}
                   <span className="badge-soft">
-                    {EDITING_ENABLED ? (editUnlocked ? "Edicion desbloqueada" : "Modo lectura") : "Edición en pausa"}
+                    {editingEnabled
+                      ? editUnlocked
+                        ? "Edicion desbloqueada"
+                        : "Modo lectura"
+                      : "Edicion en pausa"}
                   </span>
                 </div>
               </div>
@@ -569,44 +897,35 @@ export default function App() {
                 description={
                   deferredQuery
                     ? "Prueba con otro termino o cambia la categoria seleccionada. Skelly seguira buscando contigo."
-                    : editUnlocked
-                      ? "Aun no hay plantillas en esta vista. Puedes crear una nueva o restaurar las plantillas base desde Ajustes."
-                      : "No hay plantillas visibles en este filtro. Cambia de categoria o revisa si hay backups importados."
+                    : editingEnabled
+                      ? "Aun no hay plantillas en esta vista. Puedes crear una nueva o importar desde Excel o CSV."
+                      : "No hay plantillas visibles en este filtro. Cambia de categoria o revisa si ya activaste tu acceso."
                 }
               />
             )}
           </main>
         </div>
 
-        {!editUnlocked && (
+        {!editUnlocked && editingEnabled ? (
           <div className="glass-panel rounded-[24px] border border-rose/20 bg-rose/10 p-4 shadow-card">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
                 <ShieldAlert className="mt-0.5 h-5 w-5 text-rose" />
                 <div>
-                  <p className="font-medium text-white">
-                    {EDITING_ENABLED ? "Modo lectura activo" : "Edición en pausa"}
-                  </p>
+                  <p className="font-medium text-white">Modo lectura activo</p>
                   <p className="mt-1 text-sm leading-6 text-slate-200">
-                    {EDITING_ENABLED
-                      ? "Puedes buscar, filtrar, copiar y marcar favoritas. Para crear o editar plantillas, desbloquea el modo edicion con tu PIN local."
-                      : "Puedes buscar, filtrar, copiar y marcar favoritas. La creación y la edición volverán cuando el proyecto tenga backend, cuentas y biblioteca personal del usuario."}
+                    Puedes buscar, filtrar, copiar y marcar favoritas. Para editar o importar a tu
+                    biblioteca personal, desbloquea la edicion con tu PIN local.
                   </p>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setPinMode("unlock")}
-                disabled={!EDITING_ENABLED}
-                title={!EDITING_ENABLED ? BACKEND_DISABLED_TITLE : undefined}
-                className="button-primary"
-              >
+              <button type="button" onClick={() => setPinMode("unlock")} className="button-primary">
                 Desbloquear
               </button>
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="pb-1 text-center text-xs uppercase tracking-[0.18em] text-slate-500">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-slate-400">
@@ -649,35 +968,63 @@ export default function App() {
       />
 
       <PinModal
-        open={EDITING_ENABLED && Boolean(pinMode)}
+        open={Boolean(pinMode)}
         mode={pinMode}
         onClose={() => setPinMode(null)}
         onSubmit={handlePinSubmit}
       />
 
       <SettingsModal
-        open={SETTINGS_ENABLED && settingsOpen}
+        open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
+        accessState={accessState}
+        appVersion={APP_VERSION}
+        canImport={editingEnabled}
+        canManagePassword={Boolean(session?.user?.id)}
         editUnlocked={editUnlocked}
-        onExportJson={handleExportJson}
-        onImportFile={handleImportFile}
-        onExportMarkdown={handleExportMarkdown}
-        onRestoreDefaults={handleRestoreDefaults}
+        profile={profile}
+        onBlockedExport={handleBlockedExport}
         onOpenChangePin={() => {
           setSettingsOpen(false);
           setPinMode("change");
         }}
+        onOpenImport={() => {
+          if (!editingEnabled) {
+            pushToast("Necesitas una cuenta activa para importar plantillas.", "error");
+            return;
+          }
+
+          setImportOpen(true);
+        }}
+        onOpenChangePassword={() => {
+          setSettingsOpen(false);
+          setPasswordChangeOpen(true);
+        }}
+        onSignOut={handleSignOut}
       />
 
       <HelpModal
-        createTemplateDisabled={!ADD_TEMPLATE_ENABLED}
-        editingEnabled={EDITING_ENABLED}
+        createTemplateDisabled={!addTemplateEnabled}
+        editingEnabled={editingEnabled}
         open={helpOpen}
         onClose={() => setHelpOpen(false)}
         editUnlocked={editUnlocked}
-        unlockDisabled={!EDITING_ENABLED}
+        unlockDisabled={!editingEnabled}
         onUnlockClick={() => setPinMode("unlock")}
         onCreateTemplate={() => openEditor(null)}
+      />
+
+      <ImportTemplatesModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        existingTemplates={templates}
+        onImport={handleImportTemplates}
+      />
+
+      <PasswordChangeModal
+        open={passwordChangeOpen}
+        onClose={() => setPasswordChangeOpen(false)}
+        onSubmit={handleAccountPasswordChange}
       />
 
       <ToastStack toasts={toasts} />

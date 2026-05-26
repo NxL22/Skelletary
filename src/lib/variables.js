@@ -29,3 +29,4 @@ export function blankVariables(content = "") {
 export function hasVariables(content = "") {
   return /{{\s*[^}]+\s*}}/.test(content);
 }
+

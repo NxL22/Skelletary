@@ -73,3 +73,185 @@ body {
 .badge-soft {
   @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300;
 }
+
+.login-card {
+  @apply relative overflow-hidden rounded-[30px] border border-cyan/10 backdrop-blur-2xl;
+  background: rgba(4, 16, 20, 0.84);
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.56),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.login-field {
+  @apply h-14 w-full rounded-[18px] border border-white/10 px-4 text-[15px] text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan/40 focus:bg-white/[0.05] focus:ring-1 focus:ring-cyan/25;
+  background: rgba(11, 20, 24, 0.92);
+}
+
+.login-field-with-icon {
+  padding-left: 4.25rem;
+}
+
+.login-primary-button {
+  @apply relative inline-flex min-h-[3.5rem] items-center justify-center overflow-hidden rounded-[18px] px-6 text-base font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60;
+  background: linear-gradient(90deg, #31c9d0 0%, #3bd7de 100%);
+  box-shadow: 0 18px 42px rgba(54, 214, 222, 0.24);
+}
+
+.login-primary-button:hover {
+  transform: translateY(-1px);
+}
+
+.login-secondary-button {
+  @apply inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-[18px] border border-white/10 bg-white/[0.03] px-4 text-sm font-medium text-slate-100 transition;
+}
+
+.login-secondary-button:hover {
+  @apply border-cyan/25 bg-white/[0.05];
+  transform: translateY(-1px);
+}
+
+.login-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Los blobs se mueven lento para dar profundidad sin distraer durante el ingreso. */
+@keyframes login-blob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(28px, -22px, 0) scale(1.08);
+  }
+  66% {
+    transform: translate3d(-18px, 20px, 0) scale(0.94);
+  }
+}
+
+.login-blob {
+  animation: login-blob 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+.login-blob-delay-1 {
+  animation-delay: -6s;
+}
+
+.login-blob-delay-2 {
+  animation-delay: -12s;
+}
+
+@media (min-width: 768px) {
+  /* Replicamos el look que te gustaba al 90% de zoom, pero fijo en desktop. */
+  .login-desktop-scale {
+    transform: scale(0.9);
+    transform-origin: center center;
+  }
+
+  .login-shell {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .login-card {
+    border-radius: 28px;
+  }
+
+  .login-title {
+    font-size: 2.05rem;
+  }
+
+  .login-support-copy {
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.65rem;
+  }
+
+  .login-field {
+    height: 3.35rem;
+  }
+
+  .login-primary-button {
+    min-height: 3.45rem;
+  }
+
+  .login-secondary-button {
+    min-height: 3rem;
+  }
+}
+
+.login-footer-copy {
+  color: rgba(148, 163, 184, 0.88);
+  text-shadow: 0 0 18px rgba(125, 211, 252, 0.08);
+}
+
+@media (max-height: 860px) {
+  .login-shell {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .login-card {
+    border-radius: 26px;
+  }
+
+  .login-brand-box {
+    height: 3.5rem;
+    width: 3.5rem;
+  }
+
+  .login-heading-block {
+    margin-top: 2rem;
+  }
+
+  .login-title {
+    font-size: 2rem;
+  }
+
+  .login-form-stack {
+    margin-top: 1.5rem;
+  }
+
+  .login-field {
+    height: 3.25rem;
+  }
+
+  .login-primary-button {
+    min-height: 3.25rem;
+  }
+
+  .login-secondary-button {
+    min-height: 3rem;
+  }
+}
+
+@media (max-height: 720px) {
+  .login-shell {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .login-card {
+    padding: 1.25rem;
+  }
+
+  .login-heading-block {
+    margin-top: 1.5rem;
+  }
+
+  .login-title {
+    font-size: 1.8rem;
+  }
+
+  .login-field {
+    height: 3rem;
+  }
+
+  .login-primary-button {
+    min-height: 3rem;
+  }
+
+  .login-secondary-button {
+    min-height: 2.875rem;
+  }
+}

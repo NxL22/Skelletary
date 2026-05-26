@@ -61,7 +61,7 @@ export default function TemplateEditorModal({
       open={open}
       wide
       title={template ? "Editar plantilla" : "Nueva plantilla"}
-      subtitle="Crea, ajusta o refina el informe antes de guardarlo localmente."
+      subtitle="Crea, ajusta o refina el informe antes de guardarlo en tu biblioteca personal."
       onClose={onClose}
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -34,6 +34,9 @@ export default function TemplateCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="mb-2 flex flex-wrap gap-2">
+            <span className={`badge-soft ${template.libraryOrigin === "personal" ? "text-emerald-200" : "text-slate-200"}`}>
+              {template.libraryOrigin === "personal" ? "Tu biblioteca" : "Biblioteca oficial"}
+            </span>
             <span className="badge-soft">{template.category}</span>
             {template.shortcut ? (
               <span className="badge-soft font-mono text-cyan">{template.shortcut}</span>

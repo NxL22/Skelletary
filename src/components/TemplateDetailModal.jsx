@@ -99,16 +99,20 @@ export default function TemplateDetailModal({
               <>
                 <button type="button" onClick={() => onDuplicate(template)} className="button-secondary">
                   <Files className="h-4 w-4" />
-                  Duplicar
+                  {template.libraryOrigin === "core" ? "Guardar en mi biblioteca" : "Duplicar"}
                 </button>
-                <button type="button" onClick={() => onEdit(template)} className="button-secondary">
-                  <Pencil className="h-4 w-4" />
-                  Editar
-                </button>
-                <button type="button" onClick={() => onDelete(template)} className="button-danger">
-                  <Trash2 className="h-4 w-4" />
-                  Eliminar
-                </button>
+                {template.isUserOwned ? (
+                  <>
+                    <button type="button" onClick={() => onEdit(template)} className="button-secondary">
+                      <Pencil className="h-4 w-4" />
+                      Editar
+                    </button>
+                    <button type="button" onClick={() => onDelete(template)} className="button-danger">
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar
+                    </button>
+                  </>
+                ) : null}
               </>
             ) : null}
           </div>
@@ -136,6 +140,9 @@ export default function TemplateDetailModal({
         <div className="space-y-4">
           <div className="rounded-[26px] border border-white/10 bg-slate-950/50 p-5">
             <div className="mb-4 flex flex-wrap gap-2">
+              <span className={`badge-soft ${template.libraryOrigin === "personal" ? "text-emerald-200" : "text-slate-200"}`}>
+                {template.libraryOrigin === "personal" ? "Tu biblioteca" : "Biblioteca oficial"}
+              </span>
               {template.shortcut ? (
                 <span className="badge-soft font-mono text-cyan">{template.shortcut}</span>
               ) : null}

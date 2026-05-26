@@ -1,4 +1,4 @@
-import { Copy, Plus, Search, Sparkles, Unlock } from "lucide-react";
+import { Copy, FileSpreadsheet, Plus, Search, Sparkles, Unlock } from "lucide-react";
 import ModalShell from "./ModalShell";
 
 function GuideCard({ icon: Icon, label, title, description, children }) {
@@ -40,12 +40,12 @@ export default function HelpModal({
       open={open}
       wide
       title="Skelly te explica la app"
-      subtitle="Guía rápida para buscar mejor, crear plantillas y usar variables sin enredos."
+      subtitle="Guia rapida para buscar mejor, importar tu biblioteca y usar variables sin enredos."
       onClose={onClose}
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-400">
-            Todo se guarda localmente en este navegador, incluyendo tus plantillas y tu PIN.
+            La nube guarda tu biblioteca personal cuando tu cuenta ya esta activa.
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -57,7 +57,7 @@ export default function HelpModal({
                   onCreateTemplate();
                 }}
                 disabled={createTemplateDisabled}
-                title={createTemplateDisabled ? "Disponible cuando el proyecto tenga backend" : undefined}
+                title={createTemplateDisabled ? "Necesitas una cuenta activa para crear plantillas" : undefined}
                 className="button-primary"
               >
                 <Plus className="h-4 w-4" />
@@ -71,16 +71,16 @@ export default function HelpModal({
                   onUnlockClick();
                 }}
                 disabled={unlockDisabled}
-                title={unlockDisabled ? "Disponible cuando el proyecto tenga backend" : undefined}
+                title={unlockDisabled ? "Necesitas una cuenta activa para editar" : undefined}
                 className="button-primary"
               >
                 <Unlock className="h-4 w-4" />
-                Desbloquear edición
+                Desbloquear edicion
               </button>
             )}
 
             <button type="button" onClick={onClose} className="button-secondary">
-              Cerrar guía
+              Cerrar guia
             </button>
           </div>
         </div>
@@ -93,12 +93,11 @@ export default function HelpModal({
             <div className="max-w-3xl">
               <p className="text-xs uppercase tracking-[0.22em] text-cyan">Skelly onboarding</p>
               <h3 className="mt-2 font-display text-2xl font-semibold text-white sm:text-3xl">
-                Busca por fragmentos, copia rápido y deja listas tus variables.
+                Busca por fragmentos, copia rapido y deja listas tus variables.
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate-200 sm:text-base">
-                No necesitas escribir el término exacto. Puedes usar partes de una palabra,
-                varias palabras cortas o escribir sin acentos y Skelly intentará encontrar lo
-                más relevante.
+                No necesitas escribir el termino exacto. Puedes usar partes de una palabra, varias
+                palabras cortas o escribir sin acentos y Skelly intentara encontrar lo mas relevante.
               </p>
             </div>
 
@@ -111,64 +110,50 @@ export default function HelpModal({
         <div className="grid gap-4 xl:grid-cols-2">
           <GuideCard
             icon={Search}
-            label="Búsqueda"
-            title="Cómo buscar sin ser exacto"
-            description="El buscador revisa título, categoría, shortcut y contenido de cada plantilla."
+            label="Busqueda"
+            title="Como buscar sin ser exacto"
+            description="El buscador revisa titulo, categoria, shortcut y contenido de cada plantilla."
           >
             <Tip>Escribe fragmentos: nor encuentra normal, normales y coincidencias parecidas.</Tip>
-            <Tip>Escribe sin acentos si quieres: torax también encuentra tórax.</Tip>
-            <Tip>Combina partes: varic nor prioriza plantillas de várices con contenido normal.</Tip>
+            <Tip>Escribe sin acentos si quieres: torax tambien encuentra torax.</Tip>
+            <Tip>Combina partes: varic nor prioriza plantillas de varices con contenido normal.</Tip>
           </GuideCard>
 
           <GuideCard
             icon={Copy}
             label="Uso diario"
-            title="Cómo copiar y filtrar rápido"
-            description="Puedes buscar, cambiar de categoría, marcar favoritas y volver a las recientes."
+            title="Como copiar y filtrar rapido"
+            description="Puedes buscar, cambiar de categoria, marcar favoritas y volver a las recientes."
           >
             <Tip>Abre una plantilla para verla completa antes de copiar si quieres revisar detalles.</Tip>
             <Tip>Favoritas y Recientes te sirven para tus informes de uso frecuente.</Tip>
-            <Tip>Si una plantilla tiene variables, Skelly te pedirá completarlas antes de copiar.</Tip>
+            <Tip>Si una plantilla tiene variables, Skelly te pedira completarlas antes de copiar.</Tip>
           </GuideCard>
 
           <GuideCard
-            icon={Plus}
-            label="Creación"
-            title="Cómo crear una plantilla nueva"
-            description={
-              editingEnabled
-                ? "Para crear o editar necesitas desbloquear el modo edición con tu PIN local."
-                : "La creación propia está en pausa hasta conectar backend, cuentas y la biblioteca personal del usuario."
-            }
+            icon={FileSpreadsheet}
+            label="Importacion"
+            title="Como traer tus plantillas sin JSON"
+            description="La biblioteca personal acepta Excel y CSV con una vista previa antes de guardar."
           >
-            {editingEnabled ? (
-              <>
-                <Tip>Luego pulsa Nueva plantilla y completa título, categoría, shortcut y contenido.</Tip>
-                <Tip>El shortcut es opcional, pero ayuda mucho para encontrar plantillas muy rápido.</Tip>
-                <Tip>Todo lo que guardes queda almacenado en este navegador hasta que importes o restaures un backup.</Tip>
-              </>
-            ) : (
-              <>
-                <Tip>Por ahora Skelletary funciona como una biblioteca curada, rápida y confiable para consultar y copiar.</Tip>
-                <Tip>Cuando llegue el backend, cada médico podrá tener sus propias plantillas aparte de la biblioteca base incluida en la app.</Tip>
-                <Tip>La idea es mantener la experiencia simple, profesional y lista para uso diario clínico.</Tip>
-              </>
-            )}
+            <Tip>Sube tu archivo y mapea sus columnas a titulo, categoria, shortcut y contenido.</Tip>
+            <Tip>Las filas invalidas se marcan antes de importar para evitar errores raros.</Tip>
+            <Tip>Lo que importes entra solo a tu biblioteca personal, nunca a la oficial.</Tip>
           </GuideCard>
 
           <GuideCard
             icon={Sparkles}
             label="Variables"
-            title="Cómo escribir variables dentro del texto"
+            title="Como escribir variables dentro del texto"
             description="Cualquier texto entre llaves dobles se convierte en un campo editable al copiar."
           >
             <div className="rounded-[24px] border border-white/10 bg-slate-950/45 p-4 font-mono text-[13px] leading-6 text-cyan/90">
-              ANTECEDENTES CLÍNICOS: {"{{antecedente}}"}
+              ANTECEDENTES CLINICOS: {"{{antecedente}}"}
               <br />
-              HALLAZGOS: lesión de {"{{tamaño}}"} mm en {"{{localizacion}}"}.
+              HALLAZGOS: lesion de {"{{tamano}}"} mm en {"{{localizacion}}"}.
             </div>
-            <Tip>Si repites el mismo nombre de variable, la app te lo pedirá una sola vez.</Tip>
-            <Tip>Si dejas una variable vacía, al copiar se reemplaza por ___.</Tip>
+            <Tip>Si repites el mismo nombre de variable, la app te lo pedira una sola vez.</Tip>
+            <Tip>Si dejas una variable vacia, al copiar se reemplaza por ___.</Tip>
           </GuideCard>
         </div>
       </div>
