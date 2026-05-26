@@ -146,12 +146,13 @@ Regla practica:
 ### Variables necesarias en `.env`
 
 ```env
+VITE_APP_URL=https://skelletary.com
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 SUPABASE_SECRET_KEY=...
 # o, si usas claves legacy:
 SUPABASE_SERVICE_ROLE_KEY=...
-SKELLETARY_APP_URL=http://localhost:5173
+SKELLETARY_APP_URL=https://skelletary.com
 ```
 
 Sin `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY` el script no puede crear usuarios.
@@ -161,14 +162,17 @@ Sin `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY` el script no puede crear
 Para que `skelletary.com` publique la misma app que ves localmente, GitHub Actions tambien necesita:
 
 ```env
+VITE_APP_URL=https://skelletary.com
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 ```
 
-Estas dos variables no se leen desde tu PC cuando Pages compila en GitHub.
+Estas variables no se leen desde tu PC cuando Pages compila en GitHub.
 Hay que cargarlas como secrets del repositorio y consumirlas en el workflow de deploy.
 
-Si faltan, el deploy igual termina correctamente, pero la app publicada entra en modo local y parece que "no tomo" los cambios de acceso, login o biblioteca en la nube.
+Si faltan, el deploy igual termina correctamente, pero la app publicada entra en modo local o fabrica enlaces de recuperacion contra el host equivocado y parece que "no tomo" los cambios de acceso, login o biblioteca en la nube.
+
+En `Authentication > URL Configuration` de Supabase, la `Site URL` y las `Redirect URLs` de produccion deben apuntar a `https://skelletary.com`, nunca a `localhost`.
 
 ## Importacion para usuarios no tecnicos
 

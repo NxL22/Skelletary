@@ -6,12 +6,44 @@ export const AUTH_REDIRECT_MODE = {
   recovery: "recovery",
 };
 
-function buildAuthRedirectUrl(mode) {
+const configuredAppUrl = normalizeConfiguredAppUrl(import.meta.env.VITE_APP_URL);
+
+function normalizeConfiguredAppUrl(value) {
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) {
+    return "";
+  }
+
+  try {
+    const url = new URL(rawValue);
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+function getRuntimeAppUrl() {
   if (typeof window === "undefined") {
     return "";
   }
 
   const url = new URL(window.location.href);
+  url.hash = "";
+  return url.toString();
+}
+
+function buildAuthRedirectUrl(mode) {
+  const baseUrl = configuredAppUrl || getRuntimeAppUrl();
+
+  if (!baseUrl) {
+    return "";
+  }
+
+  const url = new URL(baseUrl);
+  // En recuperacion e invitacion usamos una URL publica canonica cuando existe
+  // para no depender del host actual, que podria ser un preview temporal o localhost.
   url.searchParams.set("auth_mode", mode);
   url.hash = "";
   return url.toString();

@@ -12,11 +12,11 @@ Aqui vive la base del backend de Skelletary:
 
 1. Crear proyecto en Supabase
 2. Configurar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
-3. Agregar tambien `SUPABASE_SECRET_KEY` y `SKELLETARY_APP_URL` en tu `.env`
+3. Agregar tambien `SUPABASE_SECRET_KEY`, `SKELLETARY_APP_URL` y `VITE_APP_URL` en tu `.env`
 4. Ejecutar `supabase/schema.sql`
 5. En `Authentication > General`, desactivar `Allow new users to sign up`
 6. En `Authentication > Sign In / Providers`, dejar activo email + password
-7. En `Authentication > URL Configuration`, agregar la URL local y la URL final de la app
+7. En `Authentication > URL Configuration`, agregar la URL local y la URL final de la app, dejando la `Site URL` de produccion en `https://skelletary.com`
 8. Crear usuarios con `npm run user:create`
 9. Revisar que el usuario haya quedado en `profiles` con el estado correcto
 

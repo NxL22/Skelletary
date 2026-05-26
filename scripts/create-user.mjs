@@ -63,7 +63,7 @@ Opciones:
   --share-core=true|false     Decide si recibe la biblioteca oficial. Por defecto: true.
   --trial-days=15             Duracion de la prueba si access=trial.
   --subscription-days=365     Duracion si access=active.
-  --app-url=http://localhost:5173
+  --app-url=https://skelletary.com
                               URL publica de la app para el enlace del correo.
   --help                      Muestra esta ayuda.
 `);
@@ -197,13 +197,19 @@ const resendMode = normalizeResendMode(args.resend);
 const hasCoreLibrary = normalizeBooleanFlag(args["share-core"], true);
 const trialDays = toPositiveInteger(args["trial-days"], 15);
 const subscriptionDays = toPositiveInteger(args["subscription-days"], 365);
-const appUrl = String(args["app-url"] || process.env.SKELLETARY_APP_URL || "http://localhost:5173")
+const appUrl = String(args["app-url"] || process.env.SKELLETARY_APP_URL || process.env.VITE_APP_URL || "")
   .trim()
   .replace(/\/$/, "");
 
 if (!email) {
   printUsage();
   throw new Error("Debes indicar el correo con --email.");
+}
+
+if (!appUrl) {
+  throw new Error(
+    "Debes definir SKELLETARY_APP_URL, VITE_APP_URL o --app-url para evitar correos que apunten a localhost.",
+  );
 }
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;

@@ -10,19 +10,20 @@ El owner las invita desde su propia maquina usando un script local con permisos 
 En tu `.env` deben existir:
 
 ```env
+VITE_APP_URL=https://skelletary.com
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 SUPABASE_SECRET_KEY=...
 # o, si usas claves legacy:
 SUPABASE_SERVICE_ROLE_KEY=...
-SKELLETARY_APP_URL=http://localhost:5173
+SKELLETARY_APP_URL=https://skelletary.com
 ```
 
 Y en Supabase:
 
 1. `Authentication > General > Allow new users to sign up` debe estar apagado.
 2. `Authentication > Sign In / Providers` debe tener email + password activo.
-3. `Authentication > URL Configuration` debe incluir la URL local y la URL final de tu app.
+3. `Authentication > URL Configuration` debe incluir la URL local y la URL final de tu app, pero la `Site URL` de produccion debe quedar en `https://skelletary.com`, no en localhost.
 4. `Authentication > Email Templates` puede usar las plantillas de `supabase/email-templates/`.
 
 ## Crear una cuenta en prueba
