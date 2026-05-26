@@ -1,6 +1,7 @@
 import { KeyRound, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import ModalShell from "./ModalShell";
+import PasswordField from "./PasswordField";
 
 function emptyState(mode) {
   return mode === "change"
@@ -66,45 +67,45 @@ export default function PinModal({ open, mode, onClose, onSubmit }) {
           <>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-200">PIN actual</span>
-              <input
-                type="password"
+              <PasswordField
                 value={form.currentPin}
                 onChange={(event) => updateField("currentPin", event.target.value)}
-                className="field-shell"
+                inputClassName="field-shell"
                 inputMode="numeric"
+                secretLabel="PIN"
               />
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-200">Nuevo PIN</span>
-              <input
-                type="password"
+              <PasswordField
                 value={form.nextPin}
                 onChange={(event) => updateField("nextPin", event.target.value)}
-                className="field-shell"
+                inputClassName="field-shell"
                 inputMode="numeric"
+                secretLabel="PIN"
               />
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-200">Confirmar nuevo PIN</span>
-              <input
-                type="password"
+              <PasswordField
                 value={form.confirmPin}
                 onChange={(event) => updateField("confirmPin", event.target.value)}
-                className="field-shell"
+                inputClassName="field-shell"
                 inputMode="numeric"
+                secretLabel="PIN"
               />
             </label>
           </>
         ) : (
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-200">PIN</span>
-            <input
-              type="password"
+            <PasswordField
               value={form.pin}
               onChange={(event) => updateField("pin", event.target.value)}
-              className="field-shell"
+              inputClassName="field-shell"
               inputMode="numeric"
               autoFocus
+              secretLabel="PIN"
             />
           </label>
         )}

@@ -1,6 +1,7 @@
 import { KeyRound, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import ModalShell from "./ModalShell";
+import PasswordField from "./PasswordField";
 
 export default function PasswordChangeModal({ open, onClose, onSubmit }) {
   const [password, setPassword] = useState("");
@@ -75,11 +76,10 @@ export default function PasswordChangeModal({ open, onClose, onSubmit }) {
 
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-200">Nueva contraseña</span>
-          <input
-            type="password"
+          <PasswordField
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="field-shell"
+            inputClassName="field-shell"
             autoComplete="new-password"
             placeholder="Al menos 8 caracteres"
           />
@@ -87,11 +87,10 @@ export default function PasswordChangeModal({ open, onClose, onSubmit }) {
 
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-200">Confirmar contraseña</span>
-          <input
-            type="password"
+          <PasswordField
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
-            className="field-shell"
+            inputClassName="field-shell"
             autoComplete="new-password"
             placeholder="Repite la nueva contraseña"
           />

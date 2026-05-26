@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AUTH_REDIRECT_MODE } from "../lib/auth";
+import PasswordField from "./PasswordField";
 
 const LOGIN_BACKGROUND_IMAGE = "/fondo%20del%20login/login-radiografia.png";
 
@@ -357,34 +358,28 @@ export default function AuthScreen({
                     <span className="mb-3 block text-sm font-medium text-slate-200 md:mb-2.5">
                       Nueva contraseña
                     </span>
-                    <div className="group relative">
-                      <InputLeadingIcon icon={KeyRound} />
-                      <input
-                        type="password"
-                        value={nextPassword}
-                        onChange={(event) => setNextPassword(event.target.value)}
-                        className="login-field login-field-with-icon"
-                        autoComplete="new-password"
-                        placeholder="Al menos 8 caracteres"
-                      />
-                    </div>
+                    <PasswordField
+                      value={nextPassword}
+                      onChange={(event) => setNextPassword(event.target.value)}
+                      inputClassName="login-field login-field-with-icon"
+                      autoComplete="new-password"
+                      placeholder="Al menos 8 caracteres"
+                      leadingAdornment={<InputLeadingIcon icon={KeyRound} />}
+                    />
                   </label>
 
                   <label className="block">
                     <span className="mb-3 block text-sm font-medium text-slate-200 md:mb-2.5">
                       Confirmar contraseña
                     </span>
-                    <div className="group relative">
-                      <InputLeadingIcon icon={LockKeyhole} />
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(event) => setConfirmPassword(event.target.value)}
-                        className="login-field login-field-with-icon"
-                        autoComplete="new-password"
-                        placeholder="Repite la contraseña"
-                      />
-                    </div>
+                    <PasswordField
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      inputClassName="login-field login-field-with-icon"
+                      autoComplete="new-password"
+                      placeholder="Repite la contraseña"
+                      leadingAdornment={<InputLeadingIcon icon={LockKeyhole} />}
+                    />
                   </label>
 
                   {success ? <InlineFeedback tone="success">{success}</InlineFeedback> : null}
@@ -514,17 +509,14 @@ export default function AuthScreen({
                     <span className="mb-3 block text-sm font-medium text-slate-200 md:mb-2.5">
                       Contraseña
                     </span>
-                    <div className="group relative">
-                      <InputLeadingIcon icon={LockKeyhole} />
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        className="login-field login-field-with-icon"
-                        autoComplete="current-password"
-                        placeholder="••••••••"
-                      />
-                    </div>
+                    <PasswordField
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      inputClassName="login-field login-field-with-icon"
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      leadingAdornment={<InputLeadingIcon icon={LockKeyhole} />}
+                    />
                   </label>
 
                   {success ? <InlineFeedback tone="success">{success}</InlineFeedback> : null}
