@@ -82,6 +82,20 @@ Modos disponibles:
 - `--resend=none`
   No manda correo si la cuenta ya existia. Solo actualiza el perfil en Skelletary.
 
+## Crear o reemplazar una contrasena sin correo
+
+Si Supabase tiene rate limit de correos, el owner puede definir una contrasena temporal desde el script:
+
+```bash
+npm run user:create -- --email=usuario@clinica.com --password="ContrasenaTemporal123" --access=active --share-core=true --name="Dra. Ejemplo"
+```
+
+Con `--password`, el script no envia correo por defecto. Si la cuenta no existe, la crea con email confirmado. Si ya existe, reemplaza su contrasena.
+
+Como no se manda correo, este modo no necesita `SKELLETARY_APP_URL` ni `VITE_APP_URL` si usas el reenvio por defecto.
+
+Usa este camino solo como solucion operativa temporal y comunica la contrasena por un canal seguro.
+
 ## Lo que recibe el usuario
 
 El usuario recibe un correo de invitacion.

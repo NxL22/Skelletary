@@ -55,11 +55,13 @@ Uso:
 
 Opciones:
   --email=...                 Correo del usuario. Obligatorio.
+  --password=...              Crea o reemplaza la contrasena sin enviar correo.
   --name=...                  Nombre visible para guardar en profiles.
   --access=pending|trial|active
                               Estado comercial inicial. Por defecto: trial.
   --resend=auto|invite|recovery|none
                               Estrategia de reenvio si la cuenta ya existe. Por defecto: auto.
+                              Con --password, por defecto no envia correo.
   --share-core=true|false     Decide si recibe la biblioteca oficial. Por defecto: true.
   --trial-days=15             Duracion de la prueba si access=trial.
   --subscription-days=365     Duracion si access=active.
@@ -110,6 +112,20 @@ function normalizeResendMode(value) {
   }
 
   throw new Error("El parametro --resend debe ser auto, invite, recovery o none.");
+}
+
+function normalizePassword(value) {
+  const password = String(value || "");
+
+  if (!password) {
+    return "";
+  }
+
+  if (password.trim().length < 8) {
+    throw new Error("La contrasena indicada en --password debe tener al menos 8 caracteres.");
+  }
+
+  return password;
 }
 
 function buildProfilePayload({
@@ -181,6 +197,34 @@ async function sendRecoveryEmail({ appUrl, email, publishableKey, supabaseUrl })
   }
 }
 
+async function createUserWithPassword({ email, password, supabase, userMetadata }) {
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: userMetadata,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.user;
+}
+
+async function updateUserPasswordById({ password, supabase, userId }) {
+  const { data, error } = await supabase.auth.admin.updateUserById(userId, {
+    password,
+    email_confirm: true,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.user;
+}
+
 loadEnvFile(resolve(process.cwd(), ".env"));
 
 const args = parseArgs(process.argv.slice(2));
@@ -191,22 +235,24 @@ if (args.help || args.h === "true") {
 }
 
 const email = String(args.email || "").trim().toLowerCase();
+const directPassword = normalizePassword(args.password);
 const displayName = String(args.name || "").trim();
 const access = normalizeAccess(args.access);
-const resendMode = normalizeResendMode(args.resend);
+const resendMode = normalizeResendMode(args.resend || (directPassword ? "none" : "auto"));
 const hasCoreLibrary = normalizeBooleanFlag(args["share-core"], true);
 const trialDays = toPositiveInteger(args["trial-days"], 15);
 const subscriptionDays = toPositiveInteger(args["subscription-days"], 365);
 const appUrl = String(args["app-url"] || process.env.SKELLETARY_APP_URL || process.env.VITE_APP_URL || "")
   .trim()
   .replace(/\/$/, "");
+const needsEmailRedirect = !directPassword || resendMode !== "none";
 
 if (!email) {
   printUsage();
   throw new Error("Debes indicar el correo con --email.");
 }
 
-if (!appUrl) {
+if (needsEmailRedirect && !appUrl) {
   throw new Error(
     "Debes definir SKELLETARY_APP_URL, VITE_APP_URL o --app-url para evitar correos que apunten a localhost.",
   );
@@ -229,7 +275,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   },
 });
 
-const redirectTo = `${appUrl}?auth_mode=invite`;
+const redirectTo = appUrl ? `${appUrl}?auth_mode=invite` : "";
 const inviteMetadata = displayName ? { display_name: displayName } : undefined;
 
 try {
@@ -238,8 +284,29 @@ try {
   let usedExistingUser = false;
   let sentEmailMode = null;
   let inviteError = null;
+  let passwordWasSet = false;
 
-  if (!existingUser || resendMode === "invite") {
+  if (directPassword && existingUser?.id) {
+    invitedUser = await updateUserPasswordById({
+      password: directPassword,
+      supabase,
+      userId: existingUser.id,
+    });
+    passwordWasSet = true;
+  }
+
+  if (directPassword && !existingUser) {
+    // Este camino evita el correo de invitacion cuando Supabase tiene rate limit.
+    invitedUser = await createUserWithPassword({
+      email,
+      password: directPassword,
+      supabase,
+      userMetadata: inviteMetadata,
+    });
+    passwordWasSet = true;
+  }
+
+  if (!directPassword && (!existingUser || resendMode === "invite")) {
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: inviteMetadata,
       redirectTo,
@@ -263,7 +330,7 @@ try {
 
   usedExistingUser = Boolean(existingUser);
 
-  if (usedExistingUser && resendMode !== "none" && sentEmailMode !== "invite") {
+  if (usedExistingUser && !directPassword && resendMode !== "none" && sentEmailMode !== "invite") {
     // Para cuentas que ya existen, el correo de recuperacion es la via mas confiable
     // para reenviar un acceso real sin depender de que Supabase reprocesa una invitacion.
     if (resendMode === "auto" || resendMode === "recovery" || resendMode === "invite") {
@@ -301,14 +368,18 @@ try {
   console.log(
     usedExistingUser
       ? "La cuenta ya existia. Actualizamos su perfil en Skelletary."
-      : "Invitacion enviada con exito.",
+      : directPassword
+        ? "Cuenta creada con contrasena directa."
+        : "Invitacion enviada con exito.",
   );
   console.log(`Correo: ${email}`);
   console.log(`Estado inicial: ${access}`);
   console.log(
     `Biblioteca oficial: ${hasCoreLibrary ? "compartida con este usuario" : "no compartida"}`,
   );
-  console.log(`Redirect principal: ${redirectTo}`);
+  if (redirectTo) {
+    console.log(`Redirect principal: ${redirectTo}`);
+  }
 
   if (sentEmailMode === "invite") {
     console.log("Correo enviado: invitacion para crear contraseña.");
@@ -316,6 +387,10 @@ try {
     console.log("Correo enviado: recuperacion para crear o cambiar contraseña.");
   } else {
     console.log("Correo enviado: no se envio ninguno en esta ejecucion.");
+  }
+
+  if (passwordWasSet) {
+    console.log("Contrasena directa: configurada por el owner.");
   }
 
   if (usedExistingUser) {

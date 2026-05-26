@@ -10,6 +10,7 @@ La app debe sentirse premium, profesional y extremadamente util para el trabajo 
 - Frontend: React + Vite + Tailwind CSS
 - Backend objetivo y ya integrado en la app: Supabase
 - Auth: email + contraseña, recuperacion por correo e invitacion creada solo por el owner
+- Auth excepcional: el owner puede crear o reemplazar una contraseña desde script local cuando el correo de Supabase este limitado
 - Modelo comercial: prueba manual de 15 dias o suscripcion anual activa
 - Estado inicial de una cuenta nueva: `pending` hasta activacion manual
 - Persistencia: nube como fuente principal cuando hay sesion; `localStorage` como cache y migracion

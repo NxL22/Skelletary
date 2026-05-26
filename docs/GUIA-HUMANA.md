@@ -143,6 +143,20 @@ Regla practica:
 - `--resend=none`
   No envia correo, solo actualiza el perfil.
 
+### Crear contrasena directa cuando el correo falla
+
+Si Supabase limita temporalmente los correos, puedes crear o reemplazar una contrasena desde el script:
+
+```bash
+npm run user:create -- --email=usuario@clinica.com --password="ContrasenaTemporal123" --access=active --share-core=true --name="Dra. Ejemplo"
+```
+
+Con `--password`, no se envia correo por defecto. La cuenta queda con email confirmado y puede entrar directo con email y contrasena.
+
+Como no se manda correo, este modo no necesita `SKELLETARY_APP_URL` ni `VITE_APP_URL` si usas el reenvio por defecto.
+
+Este camino debe usarse solo como excepcion operativa y la contrasena debe compartirse por un canal seguro.
+
 ### Variables necesarias en `.env`
 
 ```env
