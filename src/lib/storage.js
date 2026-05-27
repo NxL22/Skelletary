@@ -5,6 +5,7 @@ const TEMPLATE_CACHE_KEY = "skelletary.templates";
 const PIN_KEY = "skelletary.pin";
 const EDIT_UNLOCK_KEY = "skelletary.editUnlockedUntil";
 const SESSION_CACHE_KEY = "skelletary.cachedSession";
+const STORAGE_PREFIX = "skelletary.";
 
 function canUseStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
@@ -155,4 +156,24 @@ export function markLocalMigrationCompleted(userId) {
   }
 
   window.localStorage.setItem(getMigrationKey(userId), "done");
+}
+
+export function clearAppStorage() {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  const keysToRemove = [];
+
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+
+    if (key?.startsWith(STORAGE_PREFIX)) {
+      keysToRemove.push(key);
+    }
+  }
+
+  keysToRemove.forEach((key) => {
+    window.localStorage.removeItem(key);
+  });
 }

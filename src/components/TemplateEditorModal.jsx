@@ -1,6 +1,8 @@
 import { Files, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getVoiceUsageHint, mergeVoiceTranscript } from "../lib/voiceInput";
 import ModalShell from "./ModalShell";
+import VoiceFieldButton from "./VoiceFieldButton";
 
 function emptyForm() {
   return {
@@ -45,7 +47,7 @@ export default function TemplateEditorModal({
     event.preventDefault();
 
     if (!form.title.trim() || !form.category.trim() || !form.content.trim()) {
-      setError("Título, categoría y contenido son obligatorios.");
+      setError("Titulo, categoria y contenido son obligatorios.");
       return;
     }
 
@@ -61,7 +63,7 @@ export default function TemplateEditorModal({
       open={open}
       wide
       title={template ? "Editar plantilla" : "Nueva plantilla"}
-      subtitle="Crea, ajusta o refina el informe antes de guardarlo en tu biblioteca personal."
+      subtitle="Crea, ajusta o refina el informe antes de guardarlo en tu cuenta."
       onClose={onClose}
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -96,25 +98,41 @@ export default function TemplateEditorModal({
       <form id="template-editor-form" onSubmit={handleSubmit} className="space-y-5">
         <div className="grid gap-5 lg:grid-cols-2">
           <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-200">Título</span>
+            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-slate-200">
+              <span>Titulo</span>
+              <VoiceFieldButton
+                onTranscript={(transcript) => updateField("title", mergeVoiceTranscript(form.title, transcript))}
+                title="Dictar titulo"
+                idleLabel="Dictar titulo"
+                listeningLabel="Detener dictado de titulo"
+              />
+            </span>
             <input
               type="text"
               value={form.title}
               onChange={(event) => updateField("title", event.target.value)}
               className="field-shell"
-              placeholder="Ej. Ecografía abdominal normal"
+              placeholder="Ej. Ecografia abdominal normal"
             />
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-200">Categoría</span>
+            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-slate-200">
+              <span>Categoria</span>
+              <VoiceFieldButton
+                onTranscript={(transcript) => updateField("category", mergeVoiceTranscript(form.category, transcript))}
+                title="Dictar categoria"
+                idleLabel="Dictar categoria"
+                listeningLabel="Detener dictado de categoria"
+              />
+            </span>
             <input
               list="template-categories"
               type="text"
               value={form.category}
               onChange={(event) => updateField("category", event.target.value)}
               className="field-shell"
-              placeholder="Ej. Ecografía abdominal"
+              placeholder="Ej. Ecografia abdominal"
             />
             <datalist id="template-categories">
               {categories.map((category) => (
@@ -136,13 +154,29 @@ export default function TemplateEditorModal({
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-200">Contenido</span>
+          <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-slate-200">
+            <span>Contenido</span>
+            <VoiceFieldButton
+              onTranscript={(transcript) =>
+                updateField(
+                  "content",
+                  mergeVoiceTranscript(form.content, transcript, { format: "medical-content" }),
+                )
+              }
+              title="Dictar contenido"
+              idleLabel="Dictar contenido"
+              listeningLabel="Detener dictado clinico"
+            />
+          </span>
           <textarea
             value={form.content}
             onChange={(event) => updateField("content", event.target.value)}
             className="field-shell min-h-[360px] resize-y font-mono text-[13px] leading-6"
-            placeholder={"ANTECEDENTES CLÍNICOS:\n\nHALLAZGOS:\n...\n\nIMPRESIÓN:\n..."}
+            placeholder={"ANTECEDENTES CLINICOS:\n\nHALLAZGOS:\n...\n\nIMPRESION:\n..."}
           />
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            {getVoiceUsageHint("medical-content")}
+          </p>
         </label>
 
         {error ? <p className="text-sm text-rose">{error}</p> : null}

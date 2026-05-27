@@ -2,6 +2,7 @@
 -- Este archivo define la separacion estricta entre:
 -- 1. Biblioteca oficial del producto
 -- 2. Biblioteca personal de cada usuario
+-- Ninguna biblioteca debe quedar expuesta a usuarios anonimos.
 
 create extension if not exists "pgcrypto";
 
@@ -116,6 +117,34 @@ begin
 end;
 $$;
 
+create or replace function public.user_has_app_access(target_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles profile
+    where profile.id = target_user_id
+      and (
+        (
+          profile.access_status = 'trial'
+          and (profile.trial_ends_at is null or profile.trial_ends_at > timezone('utc', now()))
+        )
+        or
+        (
+          profile.access_status = 'active'
+          and (
+            profile.subscription_ends_at is null
+            or profile.subscription_ends_at > timezone('utc', now())
+          )
+        )
+      )
+  );
+$$;
+
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
 before update on public.profiles
@@ -149,7 +178,7 @@ alter table public.import_jobs enable row level security;
 alter table public.import_rows enable row level security;
 
 -- La biblioteca oficial solo se comparte en lectura con usuarios autenticados
--- cuyo perfil tenga habilitada esa biblioteca.
+-- cuyo perfil tenga habilitada esa biblioteca y acceso comercial vigente.
 drop policy if exists "core_templates_read_authenticated" on public.core_templates;
 create policy "core_templates_read_authenticated"
 on public.core_templates
@@ -157,6 +186,7 @@ for select
 to authenticated
 using (
   is_published = true
+  and public.user_has_app_access(auth.uid())
   and exists (
     select 1
     from public.profiles profile
@@ -188,65 +218,65 @@ create policy "user_templates_read_own"
 on public.user_templates
 for select
 to authenticated
-using (auth.uid() = user_id);
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "user_templates_insert_own" on public.user_templates;
 create policy "user_templates_insert_own"
 on public.user_templates
 for insert
 to authenticated
-with check (auth.uid() = user_id);
+with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "user_templates_update_own" on public.user_templates;
 create policy "user_templates_update_own"
 on public.user_templates
 for update
 to authenticated
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()))
+with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "user_templates_delete_own" on public.user_templates;
 create policy "user_templates_delete_own"
 on public.user_templates
 for delete
 to authenticated
-using (auth.uid() = user_id);
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "user_template_stats_read_own" on public.user_template_stats;
 create policy "user_template_stats_read_own"
 on public.user_template_stats
 for select
 to authenticated
-using (auth.uid() = user_id);
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "user_template_stats_insert_own" on public.user_template_stats;
 create policy "user_template_stats_insert_own"
 on public.user_template_stats
 for insert
 to authenticated
-with check (auth.uid() = user_id);
+with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "user_template_stats_update_own" on public.user_template_stats;
 create policy "user_template_stats_update_own"
 on public.user_template_stats
 for update
 to authenticated
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()))
+with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "import_jobs_read_own" on public.import_jobs;
 create policy "import_jobs_read_own"
 on public.import_jobs
 for select
 to authenticated
-using (auth.uid() = user_id);
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "import_jobs_insert_own" on public.import_jobs;
 create policy "import_jobs_insert_own"
 on public.import_jobs
 for insert
 to authenticated
-with check (auth.uid() = user_id);
+with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 drop policy if exists "import_rows_read_own" on public.import_rows;
 create policy "import_rows_read_own"
@@ -254,6 +284,8 @@ on public.import_rows
 for select
 to authenticated
 using (
+  public.user_has_app_access(auth.uid())
+  and
   exists (
     select 1
     from public.import_jobs jobs
@@ -268,6 +300,8 @@ on public.import_rows
 for insert
 to authenticated
 with check (
+  public.user_has_app_access(auth.uid())
+  and
   exists (
     select 1
     from public.import_jobs jobs

@@ -13,7 +13,12 @@ La app debe sentirse premium, profesional y extremadamente util para el trabajo 
 - Auth excepcional: el owner puede crear o reemplazar una contraseña desde script local cuando el correo de Supabase este limitado
 - Modelo comercial: prueba manual de 15 dias o suscripcion anual activa
 - Estado inicial de una cuenta nueva: `pending` hasta activacion manual
-- Persistencia: nube como fuente principal cuando hay sesion; `localStorage` como cache y migracion
+- Estados comerciales contemplados: `pending`, `trial`, `active`, `expired`
+- Regla comercial vigente: una cuenta `expired` no entra a la app hasta renovacion manual
+- Automatizacion futura ya definida: enviar aviso por correo 5 dias antes del vencimiento anual y otro cuando la suscripcion venza; por ahora no esta implementado
+- Acceso: la app no debe poder usarse sin sesion valida y acceso vigente
+- Persistencia: nube como fuente principal; `localStorage` solo como cache y migracion dentro de la experiencia autenticada
+- Cierre de sesion: al cerrar sesion o perderla por expiracion, deben limpiarse los artefactos locales de Skelletary en `localStorage`
 - Biblioteca oficial: mantenida por el owner en VS Code
 - Biblioteca oficial: puede compartirse o no por usuario, pero siempre se mantiene desde VS Code
 - Biblioteca personal: mantenida por cada usuario dentro de su cuenta
@@ -81,6 +86,7 @@ Los comentarios deben ayudar a un humano a entender el por que.
 
 - La busqueda debe sentirse inmediata.
 - El boton de limpiar del buscador debe verse una sola vez, sin duplicados del navegador.
+- Toda barra nueva de busqueda o filtro debe reutilizar el mismo patron visual y funcional de la barra principal: icono con espacio propio, boton de limpiar al escribir y acciones derechas alineadas sin superponer placeholder.
 - Skelly debe aportar dopamina suave, no distraer.
 - La app no debe verse infantil.
 - Los medicos no deben necesitar entender JSON para usar la plataforma.

@@ -55,12 +55,15 @@ La ruta elegida es Supabase:
 - Row Level Security
 
 La nube pasa a ser la fuente principal cuando el usuario inicia sesion.
+Sin sesion valida, la app no debe abrir la biblioteca ni permitir uso operativo.
 
 `localStorage` se conserva para:
 
 - cache local
 - arranque rapido
 - migracion desde la etapa anterior
+
+Cuando la sesion se cierra o deja de ser valida, los artefactos locales de Skelletary deben limpiarse del navegador.
 
 ## Acceso comercial
 
@@ -77,6 +80,17 @@ Cada usuario puede estar en uno de estos estados:
 `pending` significa que la cuenta ya existe, pero todavia no entra a la app.
 La activacion de prueba no es automatica.
 Se hace manualmente.
+
+`expired` significa que la suscripcion o prueba ya no esta vigente y la cuenta no puede abrir la biblioteca hasta una renovacion o reactivacion manual.
+
+### Correos comerciales futuros
+
+Esto todavia no esta implementado, pero ya forma parte del comportamiento esperado del producto:
+
+- enviar un correo 5 dias antes del vencimiento de una suscripcion anual
+- enviar un correo el dia en que la suscripcion venza
+
+Hasta que exista esa automatizacion, el estado `expired` igual debe existir y bloquear acceso.
 
 ## Flujo de acceso
 
@@ -184,7 +198,7 @@ VITE_SUPABASE_ANON_KEY=...
 Estas variables no se leen desde tu PC cuando Pages compila en GitHub.
 Hay que cargarlas como secrets del repositorio y consumirlas en el workflow de deploy.
 
-Si faltan, el deploy igual termina correctamente, pero la app publicada entra en modo local o fabrica enlaces de recuperacion contra el host equivocado y parece que "no tomo" los cambios de acceso, login o biblioteca en la nube.
+Si faltan, el deploy igual termina correctamente, pero la app publicada no podra autenticar bien ni fabricar enlaces de recuperacion contra el host correcto.
 
 En `Authentication > URL Configuration` de Supabase, la `Site URL` y las `Redirect URLs` de produccion deben apuntar a `https://skelletary.com`, nunca a `localhost`.
 

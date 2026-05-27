@@ -1,8 +1,31 @@
+import { normalizeTemplateContentSpacing } from "./reportFormatting";
+
 export const SPECIAL_VIEWS = {
   all: "Todas",
   favorites: "Favoritas",
   recent: "Recientes",
 };
+export const DISPLAY_SHORTCUT_MAX_LENGTH = 18;
+
+const SHORTCUT_STOP_WORDS = new Set([
+  "a",
+  "al",
+  "con",
+  "de",
+  "del",
+  "el",
+  "en",
+  "la",
+  "las",
+  "los",
+  "o",
+  "para",
+  "por",
+  "sin",
+  "un",
+  "una",
+  "y",
+]);
 
 function toSlug(value = "") {
   return value
@@ -20,6 +43,59 @@ function normalizeSearchText(value = "") {
     .toLocaleLowerCase("es")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+export function sanitizeTemplateText(value = "") {
+  return value.replace(/\bnormalin\b/gi, "normal");
+}
+
+function getShortcutSourceWords(template) {
+  return normalizeSearchText(`${template.title || ""} ${template.category || ""}`)
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((word) => !SHORTCUT_STOP_WORDS.has(word));
+}
+
+function buildGeneratedShortcut(template) {
+  const sourceWords = getShortcutSourceWords(template);
+
+  if (!sourceWords.length) {
+    return "plantilla";
+  }
+
+  const pieces = [];
+  let usedLength = 0;
+
+  sourceWords.forEach((word, index) => {
+    if (usedLength >= DISPLAY_SHORTCUT_MAX_LENGTH) {
+      return;
+    }
+
+    const maxWordLength = index === 0 ? 5 : index === 1 ? 4 : 4;
+    const nextPiece = word.slice(0, maxWordLength);
+    const separatorLength = pieces.length ? 1 : 0;
+
+    if (usedLength + separatorLength + nextPiece.length > DISPLAY_SHORTCUT_MAX_LENGTH) {
+      return;
+    }
+
+    pieces.push(nextPiece);
+    usedLength += separatorLength + nextPiece.length;
+  });
+
+  return pieces.join(" ");
+}
+
+export function getTemplateDisplayShortcut(template) {
+  const rawShortcut = sanitizeTemplateText(template.shortcut?.trim() || "");
+
+  if (rawShortcut && rawShortcut.length <= DISPLAY_SHORTCUT_MAX_LENGTH) {
+    return rawShortcut;
+  }
+
+  // Si el atajo original es demasiado largo o no existe, fabricamos uno corto
+  // desde titulo y categoria para mantener una UI estable y un alias util.
+  return buildGeneratedShortcut(template);
 }
 
 function nowIso() {
@@ -41,14 +117,22 @@ export function createTemplateId(title) {
 
 export function normalizeTemplate(template, index = 0) {
   const createdAt = template.createdAt || nowIso();
-  const title = template.title?.trim() || `Plantilla ${index + 1}`;
+  const title = sanitizeTemplateText(template.title?.trim() || `Plantilla ${index + 1}`);
+  const category = sanitizeTemplateText(template.category?.trim() || "Otros");
+  const shortcut = getTemplateDisplayShortcut({
+    ...template,
+    title,
+    category,
+  });
 
   return {
     id: template.id || createTemplateId(title),
     title,
-    category: template.category?.trim() || "Otros",
-    shortcut: template.shortcut?.trim() || "",
-    content: template.content?.trim() || "",
+    category,
+    shortcut,
+    // Saneamos alias heredados al normalizar para que el usuario vea el texto
+    // corregido aunque la fuente original siga teniendo versiones antiguas.
+    content: normalizeTemplateContentSpacing(sanitizeTemplateText(template.content || "")),
     favorite: Boolean(template.favorite),
     copyCount: Number(template.copyCount || 0),
     createdAt,
@@ -66,12 +150,20 @@ export function normalizeTemplates(templates = []) {
 
 export function createTemplate(input) {
   const timestamp = nowIso();
+  const title = sanitizeTemplateText(input.title.trim());
+  const category = sanitizeTemplateText(input.category.trim());
+  const shortcut = getTemplateDisplayShortcut({
+    ...input,
+    title,
+    category,
+  });
+
   return {
-    id: createTemplateId(input.title),
-    title: input.title.trim(),
-    category: input.category.trim(),
-    shortcut: input.shortcut?.trim() || "",
-    content: input.content.trim(),
+    id: createTemplateId(title),
+    title,
+    category,
+    shortcut,
+    content: normalizeTemplateContentSpacing(sanitizeTemplateText(input.content)),
     favorite: false,
     copyCount: 0,
     createdAt: timestamp,
@@ -84,13 +176,35 @@ export function createTemplate(input) {
 }
 
 export function updateTemplateRecord(template, changes) {
+  const title =
+    changes.title !== undefined
+      ? sanitizeTemplateText(changes.title.trim())
+      : template.title;
+  const category =
+    changes.category !== undefined
+      ? sanitizeTemplateText(changes.category.trim())
+      : template.category;
+  const rawShortcut =
+    changes.shortcut !== undefined
+      ? sanitizeTemplateText(changes.shortcut.trim())
+      : template.shortcut;
+
   return {
     ...template,
     ...changes,
-    title: changes.title?.trim() ?? template.title,
-    category: changes.category?.trim() ?? template.category,
-    shortcut: changes.shortcut?.trim() ?? template.shortcut,
-    content: changes.content?.trim() ?? template.content,
+    title,
+    category,
+    shortcut: getTemplateDisplayShortcut({
+      ...template,
+      ...changes,
+      title,
+      category,
+      shortcut: rawShortcut,
+    }),
+    content:
+      changes.content !== undefined
+        ? normalizeTemplateContentSpacing(sanitizeTemplateText(changes.content))
+        : template.content,
     updatedAt: nowIso(),
     libraryOrigin: changes.libraryOrigin ?? template.libraryOrigin,
     isUserOwned: changes.isUserOwned ?? template.isUserOwned,
@@ -100,11 +214,18 @@ export function updateTemplateRecord(template, changes) {
 
 export function duplicateTemplateRecord(template) {
   const timestamp = nowIso();
+  const title = `Copia de ${template.title}`;
+  const shortcut = getTemplateDisplayShortcut({
+    ...template,
+    title,
+    shortcut: template.shortcut ? `${template.shortcut} copia` : "",
+  });
+
   return {
     ...template,
     id: createTemplateId(`copia-${template.title}`),
-    title: `Copia de ${template.title}`,
-    shortcut: template.shortcut ? `${template.shortcut}-copia` : "",
+    title,
+    shortcut,
     favorite: false,
     copyCount: 0,
     createdAt: timestamp,
@@ -140,7 +261,9 @@ export function getCategoryCounts(templates = []) {
 function buildSearchFields(template) {
   const title = normalizeSearchText(template.title);
   const category = normalizeSearchText(template.category);
-  const shortcut = normalizeSearchText(template.shortcut);
+  const shortcut = normalizeSearchText(
+    [template.shortcut, getTemplateDisplayShortcut(template)].filter(Boolean).join(" "),
+  );
   const content = normalizeSearchText(template.content);
 
   return {

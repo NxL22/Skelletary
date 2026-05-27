@@ -1,21 +1,33 @@
 import defaultTemplates from "../data/defaultTemplates.json";
 import { normalizeProfile } from "./access";
+import { normalizeTemplateContentSpacing } from "./reportFormatting";
 import { getSupabaseClient } from "./supabaseClient";
 import {
   createTemplateId,
   duplicateTemplateRecord,
+  getTemplateDisplayShortcut,
   normalizeTemplate,
   normalizeTemplates,
+  sanitizeTemplateText,
 } from "./templates";
 
 function toRemoteTemplatePayload(template, userId) {
+  const title = sanitizeTemplateText(template.title.trim());
+  const category = sanitizeTemplateText(template.category.trim());
+  const shortcut = getTemplateDisplayShortcut({
+    ...template,
+    title,
+    category,
+    shortcut: sanitizeTemplateText(template.shortcut?.trim() || ""),
+  });
+
   return {
-    id: template.id || createTemplateId(template.title),
+    id: template.id || createTemplateId(title),
     user_id: userId,
-    title: template.title.trim(),
-    category: template.category.trim(),
-    shortcut: template.shortcut?.trim() || "",
-    content: template.content.trim(),
+    title,
+    category,
+    shortcut,
+    content: normalizeTemplateContentSpacing(sanitizeTemplateText(template.content)),
     created_at: template.createdAt,
     updated_at: template.updatedAt,
     source_type: template.sourceType || "manual",

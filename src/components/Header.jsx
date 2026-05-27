@@ -5,15 +5,31 @@ import {
   Lock,
   LogOut,
   Plus,
-  Settings2,
+  Pointer,
   ShieldCheck,
   Sparkles,
   Unlock,
-  UserRound,
 } from "lucide-react";
 import { useState } from "react";
+import { getAccessCountdownLabel, getProfileDisplayName } from "../lib/access";
 
 const SKELLY_ASSET_BASE = "/imagenes%20de%20Skelly";
+
+function SurfaceCard({ as: Tag = "div", className = "", children, ...props }) {
+  return (
+    <Tag
+      className={`group relative overflow-hidden rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(34,43,67,0.92),rgba(28,36,58,0.88))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_18px_40px_rgba(6,12,28,0.18)] ${className}`}
+      {...props}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(123,223,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_38%)]" />
+      <div className="relative flex h-full flex-col">{children}</div>
+    </Tag>
+  );
+}
+
+function CardEyebrow({ children }) {
+  return <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">{children}</p>;
+}
 
 function getRemainingTimeLabel(expiresAt) {
   if (!expiresAt) {
@@ -82,14 +98,13 @@ function HeroMascot({ missing, onMissing }) {
 }
 
 export default function Header({
-  accountEmail,
   accessState,
   addTemplateDisabled,
   backendConfigured,
   editUnlocked,
   editingEnabled,
   hasSession,
-  settingsDisabled,
+  profile,
   unlockDisabled,
   unlockExpiresAt,
   onAccountClick,
@@ -97,18 +112,13 @@ export default function Header({
   onUnlockClick,
   onLockClick,
   onNewTemplate,
-  onSettingsClick,
   onSignOut,
 }) {
   const [brandMissing, setBrandMissing] = useState(false);
   const [heroMissing, setHeroMissing] = useState(false);
   const remainingLabel = getRemainingTimeLabel(unlockExpiresAt);
-  const accountLabel = accountEmail || (backendConfigured ? "Sin sesion" : "Modo local");
-  const accountActionLabel = hasSession
-    ? "Gestionar cuenta"
-    : backendConfigured
-      ? "Entrar"
-      : "Modo local";
+  const accountLabel = getProfileDisplayName(profile);
+  const accessSummary = getAccessCountdownLabel(profile, accessState);
 
   return (
     <header className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/60 p-5 shadow-glow sm:p-7">
@@ -135,39 +145,52 @@ export default function Header({
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Velocidad</p>
-                <p className="mt-2 font-display text-lg text-white">Copiar en un clic</p>
-              </div>
-              <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Flujo</p>
-                <p className="mt-2 font-display text-lg text-white">Variables completables</p>
-              </div>
-              <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Cuenta</p>
-                <p className="mt-2 truncate font-display text-lg text-white">{accountLabel}</p>
-              </div>
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+              <SurfaceCard className="min-h-[216px]">
+                <CardEyebrow>Flujo recomendado</CardEyebrow>
+                <p className="mt-4 max-w-xl font-display text-[clamp(1.7rem,2.4vw,2.3rem)] leading-[1.28] text-white">
+                  Busca, completa variables y copia sin friccion.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <span className="badge-soft">Copiado inmediato</span>
+                  <span className="badge-soft">Variables guiadas</span>
+                  <span className="badge-soft">Dictado por voz</span>
+                </div>
+                <div className="mt-auto pt-5">
+                  <div className="h-px bg-gradient-to-r from-white/10 via-cyan/20 to-transparent" />
+                  <p className="mt-4 text-sm leading-6 text-slate-400">
+                    Flujo pensado para encontrar rapido, completar una vez y copiar sin romper el ritmo.
+                  </p>
+                </div>
+              </SurfaceCard>
+
+              <SurfaceCard
+                as="button"
+                type="button"
+                onClick={onAccountClick}
+                className="min-h-[216px] text-left transition duration-200 hover:border-cyan/35 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_40px_rgba(10,24,45,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/70"
+                title="Abre el detalle de tu cuenta y estado de acceso"
+              >
+                <CardEyebrow>Cuenta</CardEyebrow>
+                <p className="mt-4 truncate font-display text-[clamp(1.65rem,2.1vw,2.15rem)] text-white">
+                  {accountLabel}
+                </p>
+                <p className="mt-4 text-lg text-slate-100">{accessSummary}</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  {accessState?.label || "Acceso pendiente"}
+                </p>
+                <div className="mt-auto pt-5">
+                  <div className="h-px bg-gradient-to-r from-white/10 via-cyan/20 to-transparent" />
+                  <div className="mt-4 inline-flex items-center gap-2 text-sm text-cyan/85">
+                    <Pointer className="h-4 w-4" />
+                    Haz clic para ver el detalle
+                  </div>
+                </div>
+              </SurfaceCard>
             </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" onClick={onAccountClick} className="button-secondary">
-              <UserRound className="h-4 w-4" />
-              {accountActionLabel}
-            </button>
-
-            <button
-              type="button"
-              onClick={onSettingsClick}
-              disabled={settingsDisabled}
-              title={settingsDisabled ? "Necesitas una cuenta activa para abrir Ajustes" : undefined}
-              className="button-secondary"
-            >
-              <Settings2 className="h-4 w-4" />
-              Ajustes
-            </button>
-
             {editUnlocked ? (
               <>
                 <button
@@ -246,10 +269,10 @@ export default function Header({
                 {backendConfigured
                   ? editingEnabled
                     ? editUnlocked
-                      ? `Edicion desbloqueada${remainingLabel ? ` · ${remainingLabel}` : ""}`
+                      ? `Edicion desbloqueada${remainingLabel ? ` - ${remainingLabel}` : ""}`
                       : "Modo lectura"
                     : accessState?.label || "Acceso pendiente"
-                  : "Modo local"}
+                  : "Backend pendiente"}
               </div>
             </div>
 
@@ -258,7 +281,8 @@ export default function Header({
                 <Import className="h-3.5 w-3.5 text-cyan" />
                 Excel y CSV para usuarios
               </span>
-              <span className="badge-soft">Biblioteca oficial separada</span>
+              <span className="badge-soft">Busqueda por atajos</span>
+              <span className="badge-soft">Dictado en campos clave</span>
               <span className="badge-soft">Sin exportacion por ahora</span>
             </div>
 

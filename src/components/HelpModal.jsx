@@ -40,12 +40,12 @@ export default function HelpModal({
       open={open}
       wide
       title="Skelly te explica la app"
-      subtitle="Guia rapida para buscar mejor, importar tu biblioteca y usar variables sin enredos."
+      subtitle="Guia rapida para buscar mejor, importar plantillas y usar variables sin enredos."
       onClose={onClose}
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-400">
-            La nube guarda tu biblioteca personal cuando tu cuenta ya esta activa.
+            La nube guarda tus plantillas cuando tu cuenta ya esta activa.
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -112,7 +112,7 @@ export default function HelpModal({
             icon={Search}
             label="Busqueda"
             title="Como buscar sin ser exacto"
-            description="El buscador revisa titulo, categoria, shortcut y contenido de cada plantilla."
+            description="El buscador revisa titulo, categoria, atajo y contenido de cada plantilla."
           >
             <Tip>Escribe fragmentos: nor encuentra normal, normales y coincidencias parecidas.</Tip>
             <Tip>Escribe sin acentos si quieres: torax tambien encuentra torax.</Tip>
@@ -134,11 +134,11 @@ export default function HelpModal({
             icon={FileSpreadsheet}
             label="Importacion"
             title="Como traer tus plantillas sin JSON"
-            description="La biblioteca personal acepta Excel y CSV con una vista previa antes de guardar."
+            description="Puedes cargar Excel y CSV con una vista previa antes de guardar."
           >
             <Tip>Sube tu archivo y mapea sus columnas a titulo, categoria, shortcut y contenido.</Tip>
             <Tip>Las filas invalidas se marcan antes de importar para evitar errores raros.</Tip>
-            <Tip>Lo que importes entra solo a tu biblioteca personal, nunca a la oficial.</Tip>
+            <Tip>Lo que importes queda disponible en tu cuenta apenas termine la carga.</Tip>
           </GuideCard>
 
           <GuideCard

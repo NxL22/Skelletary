@@ -1,9 +1,12 @@
+import { normalizeTemplateContentSpacing } from "../lib/reportFormatting";
+
 function isPlaceholder(part) {
   return /{{\s*[^}]+\s*}}/.test(part);
 }
 
 export default function TemplateContent({ text, compact = false }) {
-  const parts = text.split(/({{\s*[^}]+\s*}})/g);
+  const normalizedText = normalizeTemplateContentSpacing(text);
+  const parts = normalizedText.split(/({{\s*[^}]+\s*}})/g);
 
   return (
     <pre

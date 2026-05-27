@@ -1,4 +1,5 @@
 import { Copy, Heart, Sparkles, Star } from "lucide-react";
+import { DISPLAY_SHORTCUT_MAX_LENGTH, getTemplateDisplayShortcut } from "../lib/templates";
 import { extractVariables, hasVariables } from "../lib/variables";
 import TemplateContent from "./TemplateContent";
 
@@ -25,21 +26,25 @@ export default function TemplateCard({
     variableCount === 1
       ? "Variable a completar antes de copiar"
       : "Variables a completar antes de copiar";
+  const shortcut = getTemplateDisplayShortcut(template);
+  const shouldShowShortcut = Boolean(shortcut) && shortcut.length <= DISPLAY_SHORTCUT_MAX_LENGTH;
 
   return (
     <article
-      className="group glass-panel flex h-full cursor-pointer flex-col rounded-[28px] p-5 shadow-card transition hover:-translate-y-1 hover:border-cyan/20 hover:bg-white/[0.07]"
+      className="group glass-panel flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] p-5 shadow-card transition hover:-translate-y-1 hover:border-cyan/20 hover:bg-white/[0.07]"
       onClick={() => onOpen(template)}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="mb-2 flex flex-wrap gap-2">
-            <span className={`badge-soft ${template.libraryOrigin === "personal" ? "text-emerald-200" : "text-slate-200"}`}>
-              {template.libraryOrigin === "personal" ? "Tu biblioteca" : "Biblioteca oficial"}
-            </span>
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex min-w-0 flex-wrap items-start gap-2">
             <span className="badge-soft">{template.category}</span>
-            {template.shortcut ? (
-              <span className="badge-soft font-mono text-cyan">{template.shortcut}</span>
+            {shouldShowShortcut ? (
+              <div className="group/shortcut relative">
+                <span className="badge-soft font-mono text-cyan">{shortcut}</span>
+                <div className="pointer-events-none absolute left-0 top-[calc(100%+0.55rem)] z-20 w-56 rounded-2xl border border-cyan/20 bg-slate-950/96 px-3 py-2 text-xs leading-5 text-slate-200 opacity-0 shadow-[0_18px_40px_rgba(5,10,25,0.38)] transition duration-200 group-hover/shortcut:opacity-100 group-focus-within/shortcut:opacity-100">
+                  Atajo rapido para encontrar esta plantilla mas facil en el buscador.
+                </div>
+              </div>
             ) : null}
             {variableEnabled ? (
               <span className="badge-soft text-rose">
@@ -58,12 +63,13 @@ export default function TemplateCard({
             event.stopPropagation();
             onToggleFavorite(template);
           }}
-          className={`rounded-full p-2 transition ${
+          className={`shrink-0 rounded-full p-2 transition ${
             template.favorite
               ? "bg-rose/10 text-rose"
               : "text-slate-500 hover:bg-white/10 hover:text-rose"
           }`}
           aria-label={template.favorite ? "Quitar de favoritas" : "Marcar como favorita"}
+          title={template.favorite ? "Quitar de favoritas" : "Marcar como favorita"}
         >
           {template.favorite ? <Heart className="h-5 w-5 fill-current" /> : <Star className="h-5 w-5" />}
         </button>
@@ -84,7 +90,7 @@ export default function TemplateCard({
               ))}
               {variableCount > visibleVariables.length ? (
                 <span className="badge-soft text-rose">
-                  +{variableCount - visibleVariables.length} más
+                  +{variableCount - visibleVariables.length} mas
                 </span>
               ) : null}
             </div>

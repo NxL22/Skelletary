@@ -1,8 +1,14 @@
 import { Copy, Files, Heart, MinusCircle, Pencil, Sparkles, Star, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  DISPLAY_SHORTCUT_MAX_LENGTH,
+  getTemplateDisplayShortcut,
+} from "../lib/templates";
+import { getVoiceUsageHint, mergeVoiceTranscript } from "../lib/voiceInput";
 import { extractVariables, fillVariables, hasVariables } from "../lib/variables";
 import ModalShell from "./ModalShell";
 import TemplateContent from "./TemplateContent";
+import VoiceFieldButton from "./VoiceFieldButton";
 
 function Stat({ label, value }) {
   return (
@@ -52,8 +58,10 @@ export default function TemplateDetailModal({
   const variableDetectedLabel =
     variables.length === 1 ? "Variable detectada" : "Variables detectadas";
   const inlineFillLabel =
-    variables.length === 1 ? "Completar variable aquí mismo" : "Completar variables aquí mismo";
+    variables.length === 1 ? "Completar variable aqui mismo" : "Completar variables aqui mismo";
   const [values, setValues] = useState({});
+  const shortcut = getTemplateDisplayShortcut(template);
+  const shouldShowShortcut = Boolean(shortcut) && shortcut.length <= DISPLAY_SHORTCUT_MAX_LENGTH;
 
   useEffect(() => {
     if (!open) {
@@ -99,7 +107,7 @@ export default function TemplateDetailModal({
               <>
                 <button type="button" onClick={() => onDuplicate(template)} className="button-secondary">
                   <Files className="h-4 w-4" />
-                  {template.libraryOrigin === "core" ? "Guardar en mi biblioteca" : "Duplicar"}
+                  Duplicar
                 </button>
                 {template.isUserOwned ? (
                   <>
@@ -140,11 +148,13 @@ export default function TemplateDetailModal({
         <div className="space-y-4">
           <div className="rounded-[26px] border border-white/10 bg-slate-950/50 p-5">
             <div className="mb-4 flex flex-wrap gap-2">
-              <span className={`badge-soft ${template.libraryOrigin === "personal" ? "text-emerald-200" : "text-slate-200"}`}>
-                {template.libraryOrigin === "personal" ? "Tu biblioteca" : "Biblioteca oficial"}
-              </span>
-              {template.shortcut ? (
-                <span className="badge-soft font-mono text-cyan">{template.shortcut}</span>
+              {shouldShowShortcut ? (
+                <span
+                  title={shortcut}
+                  className="badge-soft max-w-full break-all font-mono text-cyan"
+                >
+                  {shortcut}
+                </span>
               ) : null}
               {variableEnabled ? <span className="badge-soft text-rose">{variableDetectedLabel}</span> : null}
             </div>
@@ -158,14 +168,30 @@ export default function TemplateDetailModal({
                 {inlineFillLabel}
               </div>
               <p className="mt-2 text-sm leading-6 text-slate-200">
-                Rellena solo lo necesario. Si dejas algo vacío, se copiará como <span className="font-mono">___</span>.
+                Rellena solo lo necesario. Si dejas algo vacio, se copiara como <span className="font-mono">___</span>.
+              </p>
+              <p className="mt-3 text-xs leading-5 text-slate-400">
+                {getVoiceUsageHint("medical-content")}
               </p>
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 {variables.map((variableName) => (
                   <label key={variableName} className="block">
-                    <span className="mb-2 block text-sm font-medium text-slate-100">
-                      {variableName}
+                    <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-slate-100">
+                      <span>{variableName}</span>
+                      <VoiceFieldButton
+                        onTranscript={(transcript) =>
+                          setValues((current) => ({
+                            ...current,
+                            [variableName]: mergeVoiceTranscript(current[variableName], transcript, {
+                              format: "medical-content",
+                            }),
+                          }))
+                        }
+                        title={`Dictar variable ${variableName}`}
+                        idleLabel={`Dictar variable ${variableName}`}
+                        listeningLabel="Detener dictado"
+                      />
                     </span>
                     <input
                       type="text"
@@ -197,9 +223,12 @@ export default function TemplateDetailModal({
         </div>
 
         <div className="space-y-3">
-          <Stat label="Shortcut" value={template.shortcut || "Sin shortcut"} />
+          <Stat
+            label="Atajo"
+            value={shortcut || "Sin atajo"}
+          />
           <Stat label="Copias" value={template.copyCount} />
-          <Stat label="Última copia" value={formatDate(template.lastCopiedAt)} />
+          <Stat label="Ultima copia" value={formatDate(template.lastCopiedAt)} />
           <Stat label="Creada" value={formatDate(template.createdAt)} />
           <Stat label="Actualizada" value={formatDate(template.updatedAt)} />
         </div>

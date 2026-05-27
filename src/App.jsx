@@ -17,7 +17,6 @@ import ScrollToTopButton from "./components/ScrollToTopButton";
 import AuthScreen from "./components/AuthScreen";
 import ImportTemplatesModal from "./components/ImportTemplatesModal";
 import PasswordChangeModal from "./components/PasswordChangeModal";
-import defaultTemplates from "./data/defaultTemplates.json";
 import { copyText, playCopyFeedback } from "./lib/clipboard";
 import { resolveAccessState } from "./lib/access";
 import {
@@ -43,6 +42,7 @@ import {
   upsertTemplateStatsRemote,
 } from "./lib/remoteTemplates";
 import {
+  clearAppStorage,
   DEFAULT_PIN,
   getEditUnlockExpiresAt,
   hasCompletedLocalMigration,
@@ -69,45 +69,15 @@ import {
   normalizeTemplates,
   updateTemplateRecord,
 } from "./lib/templates";
+import { normalizeTemplateContentSpacing } from "./lib/reportFormatting";
 import { blankVariables, fillVariables, hasVariables } from "./lib/variables";
 
 const APP_VERSION = "2.0.0";
-const TEMPLATES_PER_PAGE = 60;
-const LOCAL_MODE_ACCESS = {
-  status: "active",
-  hasAccess: true,
-  label: "Modo local",
-  detail: "La app esta funcionando con cache local mientras terminas la configuracion del backend.",
-};
-
-function mergeStoredWithSeededTemplates(storedTemplates, seededTemplates) {
-  const storedIds = new Set(storedTemplates.map((template) => template.id));
-  const missingSeededTemplates = seededTemplates.filter((template) => !storedIds.has(template.id));
-
-  if (!missingSeededTemplates.length) {
-    return storedTemplates;
-  }
-
-  // Conservamos lo que el navegador ya conocia, pero reinyectamos el catalogo oficial
-  // que falte para no perder plantillas base cuando la version del producto crece.
-  return [...storedTemplates, ...missingSeededTemplates];
-}
+const TEMPLATES_PER_PAGE = 10;
 
 function getInitialLocalTemplates() {
-  const seededTemplates = normalizeTemplates(defaultTemplates).map((template) => ({
-    ...template,
-    libraryOrigin: "core",
-    isUserOwned: false,
-  }));
   const storedTemplates = loadTemplates();
-
-  if (storedTemplates?.length) {
-    const normalizedStoredTemplates = normalizeTemplates(storedTemplates);
-    return mergeStoredWithSeededTemplates(normalizedStoredTemplates, seededTemplates);
-  }
-
-  saveTemplates(seededTemplates);
-  return seededTemplates;
+  return storedTemplates?.length ? normalizeTemplates(storedTemplates) : [];
 }
 
 function getViewHeading(activeView) {
@@ -129,7 +99,7 @@ function getViewHeading(activeView) {
 export default function App() {
   const backendConfigured = isSupabaseConfigured();
   const [templates, setTemplates] = useState(getInitialLocalTemplates);
-  const [legacyTemplatesSnapshot] = useState(() => loadTemplates() || []);
+  const [legacyTemplatesSnapshot, setLegacyTemplatesSnapshot] = useState(() => loadTemplates() || []);
   const [searchValue, setSearchValue] = useState("");
   const deferredQuery = useDeferredValue(searchValue);
   const [activeView, setActiveView] = useState(SPECIAL_VIEWS.all);
@@ -152,19 +122,21 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const resultsTopRef = useRef(null);
 
-  const accessState = backendConfigured ? resolveAccessState(profile) : LOCAL_MODE_ACCESS;
+  const accessState = resolveAccessState(profile);
   const hasCloudAccess = Boolean(backendConfigured && session?.user?.id && accessState.hasAccess);
   // Cuando el usuario llega desde un correo de invitacion o recuperacion,
   // obligamos a mostrar la pantalla de acceso aunque ya exista sesion.
   const shouldHandlePasswordFlow = Boolean(
     authRedirectMode === AUTH_REDIRECT_MODE.invite || authRedirectMode === AUTH_REDIRECT_MODE.recovery,
   );
+  // La biblioteca no debe renderizarse sin sesion valida. Si falta backend,
+  // dejamos el acceso bloqueado en la pantalla de login/configuracion.
   const shouldRenderAuthScreen = Boolean(
-    backendConfigured &&
-      (shouldHandlePasswordFlow || (!workspaceLoading && (!session?.user?.id || !accessState.hasAccess))),
+    !backendConfigured ||
+      shouldHandlePasswordFlow ||
+      (!workspaceLoading && (!session?.user?.id || !accessState.hasAccess)),
   );
   const editingEnabled = hasCloudAccess;
-  const settingsEnabled = hasCloudAccess;
   const addTemplateEnabled = hasCloudAccess;
 
   const filteredTemplates = filterAndSortTemplates(templates, {
@@ -196,8 +168,34 @@ export default function App() {
   );
 
   useEffect(() => {
+    if (!session?.user?.id) {
+      return;
+    }
+
     saveTemplates(templates);
-  }, [templates]);
+  }, [session?.user?.id, templates]);
+
+  function clearClientSessionFootprint() {
+    // Limpiamos todo lo que haya quedado en localStorage para que otra cuenta
+    // no herede cache, PIN ni metricas locales al reutilizar el mismo navegador.
+    clearAppStorage();
+    setTemplates([]);
+    setLegacyTemplatesSnapshot([]);
+    setSelectedTemplateId(null);
+    setEditorState({ open: false, template: null });
+    setVariableState({ open: false, template: null });
+    setImportOpen(false);
+    setSettingsOpen(false);
+    setHelpOpen(false);
+    setPasswordChangeOpen(false);
+    setMigrationPromptVisible(false);
+    setSearchValue("");
+    setActiveView(SPECIAL_VIEWS.all);
+    setCurrentPage(1);
+    lockEdit();
+    setEditUnlocked(false);
+    setUnlockExpiresAt(null);
+  }
 
   useEffect(() => {
     function syncEditState() {
@@ -240,11 +238,16 @@ export default function App() {
 
         if (isMounted) {
           setSession(currentSession);
-          saveCachedSession(currentSession);
+          if (currentSession?.user?.id) {
+            saveCachedSession(currentSession);
+          } else {
+            clearClientSessionFootprint();
+          }
         }
       } catch {
         if (isMounted) {
           pushToast("No pudimos restaurar la sesion actual.", "error");
+          clearClientSessionFootprint();
           setWorkspaceLoading(false);
         }
       }
@@ -262,7 +265,12 @@ export default function App() {
       }
 
       setSession(nextSession);
-      saveCachedSession(nextSession);
+
+      if (nextSession?.user?.id) {
+        saveCachedSession(nextSession);
+      } else {
+        clearClientSessionFootprint();
+      }
     });
 
     return () => {
@@ -279,9 +287,7 @@ export default function App() {
     if (!session?.user?.id) {
       setProfile(null);
       setWorkspaceLoading(false);
-      lockEdit();
-      setEditUnlocked(false);
-      setUnlockExpiresAt(null);
+      clearClientSessionFootprint();
       return;
     }
 
@@ -315,6 +321,8 @@ export default function App() {
 
         if (nextAccessState.hasAccess) {
           setTemplates(workspace.templates);
+        } else {
+          setTemplates([]);
         }
 
         setWorkspaceLoading(false);
@@ -384,6 +392,7 @@ export default function App() {
     }
 
     const workspace = await fetchRemoteWorkspace(session.user.id);
+    const nextAccessState = resolveAccessState(workspace.profile);
     setProfile(
       workspace.profile || {
         id: session.user.id,
@@ -392,7 +401,7 @@ export default function App() {
         accessStatus: "pending",
       },
     );
-    setTemplates(workspace.templates);
+    setTemplates(nextAccessState.hasAccess ? workspace.templates : []);
   }
 
   async function handleAuthenticate({ email, password }) {
@@ -418,10 +427,9 @@ export default function App() {
       await signOut();
       clearAuthRedirectModeFromUrl();
       setAuthRedirectMode(AUTH_REDIRECT_MODE.default);
+      setSession(null);
+      clearClientSessionFootprint();
       setProfile(null);
-      lockEdit();
-      setEditUnlocked(false);
-      setUnlockExpiresAt(null);
       pushToast("Sesion cerrada", "info");
     } catch {
       pushToast("No pudimos cerrar la sesion.", "error");
@@ -466,7 +474,7 @@ export default function App() {
 
   async function handleCopyResult(template, finalText, successMessage) {
     try {
-      await copyText(finalText);
+      await copyText(normalizeTemplateContentSpacing(finalText));
       void playCopyFeedback();
 
       const updatedTemplate = markTemplateCopied(template);
@@ -536,7 +544,7 @@ export default function App() {
     }
 
     if (template && !template.isUserOwned) {
-      pushToast("Las plantillas oficiales se editan desde VS Code y luego se publican.", "info");
+      pushToast("Estas plantillas se editan fuera de la app y luego se publican.", "info");
       return;
     }
 
@@ -566,11 +574,11 @@ export default function App() {
         setTemplates((current) =>
           current.map((entry) => (entry.id === originalTemplate.id ? savedTemplate : entry)),
         );
-        pushToast("Plantilla personal actualizada", "success");
+        pushToast("Plantilla actualizada", "success");
       } else {
         setTemplates((current) => [savedTemplate, ...current]);
         setCurrentPage(1);
-        pushToast("Plantilla personal creada", "success");
+        pushToast("Plantilla creada", "success");
       }
 
       closeEditor();
@@ -594,12 +602,7 @@ export default function App() {
       setCurrentPage(1);
       closeEditor();
       setSelectedTemplateId(duplicate.id);
-      pushToast(
-        template.libraryOrigin === "core"
-          ? "Plantilla oficial duplicada a tu biblioteca personal"
-          : "Plantilla duplicada",
-        "success",
-      );
+      pushToast("Plantilla duplicada", "success");
     } catch (error) {
       pushToast(error.message || "No pudimos duplicar la plantilla.", "error");
     }
@@ -607,11 +610,11 @@ export default function App() {
 
   async function handleDelete(template) {
     if (!template.isUserOwned) {
-      pushToast("Las plantillas oficiales no se eliminan desde la app.", "info");
+      pushToast("Estas plantillas no se eliminan desde la app.", "info");
       return;
     }
 
-    if (!window.confirm(`Eliminar la plantilla "${template.title}" de tu biblioteca personal?`)) {
+    if (!window.confirm(`Eliminar la plantilla "${template.title}"?`)) {
       return;
     }
 
@@ -620,7 +623,7 @@ export default function App() {
       setTemplates((current) => current.filter((entry) => entry.id !== template.id));
       closeEditor();
       setSelectedTemplateId(null);
-      pushToast("Plantilla personal eliminada", "success");
+      pushToast("Plantilla eliminada", "success");
     } catch (error) {
       pushToast(error.message || "No pudimos eliminar la plantilla.", "error");
     }
@@ -644,7 +647,7 @@ export default function App() {
 
     setTemplates((current) => [...importedTemplates, ...current]);
     setCurrentPage(1);
-    pushToast(`${importedTemplates.length} plantillas importadas a tu biblioteca personal.`, "success");
+    pushToast(`${importedTemplates.length} plantillas importadas.`, "success");
   }
 
   function handleBlockedExport() {
@@ -744,43 +747,22 @@ export default function App() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <Header
-          accountEmail={profile?.email || session?.user?.email || ""}
           accessState={accessState}
           addTemplateDisabled={!addTemplateEnabled}
           backendConfigured={backendConfigured}
           editUnlocked={editUnlocked}
           editingEnabled={editingEnabled}
           hasSession={Boolean(session?.user?.id)}
-          settingsDisabled={!settingsEnabled}
+          profile={profile}
           unlockDisabled={!editingEnabled}
           unlockExpiresAt={unlockExpiresAt}
-          onAccountClick={() => {
-            if (!backendConfigured) {
-              pushToast("Configura Supabase para activar el acceso con correo.", "info");
-              return;
-            }
-
-            setSettingsOpen(true);
-          }}
+          onAccountClick={() => setSettingsOpen(true)}
           onHelpClick={() => setHelpOpen(true)}
           onUnlockClick={() => setPinMode("unlock")}
           onLockClick={handleLockEdit}
           onNewTemplate={() => openEditor(null)}
-          onSettingsClick={() => setSettingsOpen(true)}
           onSignOut={handleSignOut}
         />
-
-        {backendConfigured ? (
-          <div className="rounded-[24px] border border-cyan/20 bg-cyan/10 px-4 py-3 text-sm text-slate-100">
-            <span className="font-medium text-white">Estado de acceso:</span> {accessState.label}.{" "}
-            <span className="text-slate-300">{accessState.detail}</span>
-          </div>
-        ) : (
-          <div className="rounded-[24px] border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
-            Supabase aun no esta configurado. La app sigue mostrando la biblioteca oficial local
-            para que puedas continuar el desarrollo y la curacion del catalogo.
-          </div>
-        )}
 
         <SearchBar
           value={searchValue}
@@ -836,7 +818,7 @@ export default function App() {
                   <h2 className="font-display text-2xl font-semibold text-white">{viewHeading}</h2>
                   <p className="mt-1 text-sm text-slate-400">
                     {deferredQuery
-                      ? "Busqueda en tiempo real por titulo, categoria, shortcut y contenido."
+                      ? "Busqueda en tiempo real por titulo, categoria, atajo y contenido."
                       : "Orden automatico: favoritas, mas usadas, mas recientes y alfabetico."}
                   </p>
                 </div>
@@ -881,14 +863,6 @@ export default function App() {
                     />
                   ))}
                 </div>
-
-                <PaginationControls
-                  currentPage={resolvedPage}
-                  totalPages={totalPages}
-                  totalItems={filteredTemplates.length}
-                  pageSize={TEMPLATES_PER_PAGE}
-                  onPageChange={handlePageChange}
-                />
               </>
             ) : (
               <EmptyState
@@ -914,8 +888,8 @@ export default function App() {
                 <div>
                   <p className="font-medium text-white">Modo lectura activo</p>
                   <p className="mt-1 text-sm leading-6 text-slate-200">
-                    Puedes buscar, filtrar, copiar y marcar favoritas. Para editar o importar a tu
-                    biblioteca personal, desbloquea la edicion con tu PIN local.
+                    Puedes buscar, filtrar, copiar y marcar favoritas. Para editar o importar,
+                    desbloquea la edicion con tu PIN local.
                   </p>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
-import { createTemplateId } from "./templates";
+import { normalizeTemplateContentSpacing } from "./reportFormatting";
+import { createTemplateId, sanitizeTemplateText } from "./templates";
 
 const REQUIRED_FIELDS = ["title", "category", "content"];
 
@@ -11,7 +12,9 @@ export const IMPORT_FIELD_OPTIONS = [
 ];
 
 function normalizeCellValue(value) {
-  return typeof value === "string" ? value.trim() : `${value ?? ""}`.trim();
+  return sanitizeTemplateText(
+    typeof value === "string" ? value.trim() : `${value ?? ""}`.trim(),
+  );
 }
 
 function guessFieldByHeader(header) {
@@ -97,7 +100,11 @@ export function validateImportedRows(rows = [], mapping = {}, existingTemplates 
       category:
         normalizeCellValue(row[findHeaderForField(mapping, "category")]) || "Otros",
       shortcut: normalizeCellValue(row[findHeaderForField(mapping, "shortcut")]),
-      content: normalizeCellValue(row[findHeaderForField(mapping, "content")]),
+      // Normalizamos el interlineado al importar para que la copia final
+      // mantenga solo la separacion clinica entre secciones principales.
+      content: normalizeTemplateContentSpacing(
+        normalizeCellValue(row[findHeaderForField(mapping, "content")]),
+      ),
     };
 
     const missingFields = REQUIRED_FIELDS.filter((field) => !mapped[field]);
@@ -118,7 +125,7 @@ export function validateImportedRows(rows = [], mapping = {}, existingTemplates 
       reason: missingFields.length
         ? `Faltan campos requeridos: ${missingFields.join(", ")}`
         : isDuplicate
-          ? "Duplicada dentro de tu biblioteca personal o del mismo archivo."
+          ? "Duplicada dentro de tu cuenta o del mismo archivo."
           : "",
     };
   });
