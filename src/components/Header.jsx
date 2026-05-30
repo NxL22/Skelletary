@@ -13,7 +13,12 @@ import {
 import { useState } from "react";
 import { getAccessCountdownLabel, getProfileDisplayName } from "../lib/access";
 
-const SKELLY_ASSET_BASE = "/imagenes%20de%20Skelly";
+function getPublicAssetPath(relativePath) {
+  // Vite expone `public/` desde la base de la app. Armamos la URL asi para que
+  // las imagenes sigan funcionando tanto en local como si luego se publica en una subruta.
+  const normalizedPath = relativePath.replace(/^\/+/, "");
+  return `${import.meta.env.BASE_URL}${encodeURI(normalizedPath)}`;
+}
 
 function SurfaceCard({ as: Tag = "div", className = "", children, ...props }) {
   return (
@@ -55,7 +60,7 @@ function BrandBadge({ missing, onMissing }) {
     <div className="relative h-20 w-20 overflow-hidden rounded-full border border-white/55 bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef6ff_55%,#d8e6f4_100%)] shadow-[0_16px_34px_rgba(8,15,35,0.32)] ring-4 ring-white/10">
       <div className="absolute inset-[4px] rounded-full bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.98),rgba(226,238,248,0.82))]" />
       <img
-        src={`${SKELLY_ASSET_BASE}/skelly_logo.webp`}
+        src={getPublicAssetPath("imagenes de Skelly/skelly_logo.webp")}
         alt="Logo de Skelletary"
         className="relative z-10 h-full w-full object-contain object-center scale-[1.34]"
         onError={onMissing}
@@ -88,7 +93,7 @@ function HeroMascot({ missing, onMissing }) {
         Diagnostic mode
       </div>
       <img
-        src={`${SKELLY_ASSET_BASE}/skelly-bust.webp`}
+        src={getPublicAssetPath("imagenes de Skelly/skelly-bust.png")}
         alt="Skelly, asistente radiologica"
         className="relative z-10 h-full w-full object-cover object-[center_14%] scale-[1.08] drop-shadow-[0_24px_35px_rgba(85,120,155,0.35)]"
         onError={onMissing}
