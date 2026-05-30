@@ -74,6 +74,7 @@ import { blankVariables, fillVariables, hasVariables } from "./lib/variables";
 
 const APP_VERSION = "2.0.0";
 const TEMPLATES_PER_PAGE = 10;
+const TOAST_DURATION_MS = 4000;
 
 function getInitialLocalTemplates() {
   const storedTemplates = loadTemplates();
@@ -121,6 +122,7 @@ export default function App() {
   const [unlockExpiresAt, setUnlockExpiresAt] = useState(getEditUnlockExpiresAt());
   const [toasts, setToasts] = useState([]);
   const resultsTopRef = useRef(null);
+  const toastTimeoutsRef = useRef(new Map());
 
   const accessState = resolveAccessState(profile);
   const hasCloudAccess = Boolean(backendConfigured && session?.user?.id && accessState.hasAccess);
@@ -174,6 +176,15 @@ export default function App() {
 
     saveTemplates(templates);
   }, [session?.user?.id, templates]);
+
+  useEffect(() => {
+    return () => {
+      // Si la app desmonta, soltamos los temporizadores para que no intenten
+      // modificar estado despues de que el usuario haya salido o navegado.
+      toastTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      toastTimeoutsRef.current.clear();
+    };
+  }, []);
 
   function clearClientSessionFootprint() {
     // Limpiamos todo lo que haya quedado en localStorage para que otra cuenta
@@ -350,6 +361,17 @@ export default function App() {
     setMigrationPromptVisible(canOfferMigration);
   }, [canOfferMigration]);
 
+  function dismissToast(id) {
+    const timeoutId = toastTimeoutsRef.current.get(id);
+
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+      toastTimeoutsRef.current.delete(id);
+    }
+
+    setToasts((current) => current.filter((toast) => toast.id !== id));
+  }
+
   function pushToast(message, tone = "info") {
     const id =
       typeof crypto !== "undefined" && crypto.randomUUID
@@ -357,9 +379,12 @@ export default function App() {
         : `${Date.now()}-${Math.random()}`;
 
     setToasts((current) => [...current, { id, message, tone }]);
-    window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
+      toastTimeoutsRef.current.delete(id);
       setToasts((current) => current.filter((toast) => toast.id !== id));
-    }, 3200);
+    }, TOAST_DURATION_MS);
+
+    toastTimeoutsRef.current.set(id, timeoutId);
   }
 
   function closeEditor() {
@@ -718,7 +743,7 @@ export default function App() {
           onSignOut={handleSignOut}
           onUpdatePassword={handlePasswordUpdate}
         />
-        <ToastStack toasts={toasts} />
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </>
     );
   }
@@ -736,7 +761,7 @@ export default function App() {
           onSignOut={handleSignOut}
           onUpdatePassword={handlePasswordUpdate}
         />
-        <ToastStack toasts={toasts} />
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </>
     );
   }
@@ -1001,7 +1026,7 @@ export default function App() {
         onSubmit={handleAccountPasswordChange}
       />
 
-      <ToastStack toasts={toasts} />
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
       <ScrollToTopButton />
     </div>
   );
