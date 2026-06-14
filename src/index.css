@@ -185,6 +185,92 @@ body {
   text-shadow: 0 0 18px rgba(125, 211, 252, 0.08);
 }
 
+/* El corazon late con un doble pulso suave para sentirse vivo sin romper la calma de la interfaz. */
+@keyframes footer-heart-beat {
+  0%,
+  18%,
+  36%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(246, 171, 200, 0.18));
+  }
+
+  9% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 12px rgba(246, 171, 200, 0.4));
+  }
+
+  14% {
+    transform: scale(0.97);
+  }
+
+  26% {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 16px rgba(246, 171, 200, 0.52));
+  }
+
+  31% {
+    transform: scale(0.985);
+  }
+}
+
+@keyframes footer-heart-halo {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.92);
+  }
+
+  26% {
+    opacity: 0.56;
+    transform: scale(1.32);
+  }
+
+  42% {
+    opacity: 0.18;
+    transform: scale(1.08);
+  }
+}
+
+.footer-heart-shell {
+  position: relative;
+  display: inline-flex;
+  height: 1.1rem;
+  width: 1.1rem;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+.footer-heart-shell::before {
+  content: "";
+  position: absolute;
+  inset: -0.22rem;
+  z-index: -1;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(246, 171, 200, 0.34) 0%, rgba(246, 171, 200, 0.14) 42%, transparent 74%);
+  filter: blur(4px);
+  animation: footer-heart-halo 3.2s ease-in-out infinite;
+}
+
+.footer-heart-icon {
+  animation: footer-heart-beat 3.2s cubic-bezier(0.2, 0.75, 0.18, 1) infinite;
+  transform-origin: center;
+  will-change: transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-heart-shell::before,
+  .footer-heart-icon {
+    animation: none;
+  }
+
+  .footer-heart-icon {
+    filter: drop-shadow(0 0 10px rgba(246, 171, 200, 0.32));
+  }
+}
+
 @media (max-height: 860px) {
   .login-shell {
     padding-top: 0.75rem;

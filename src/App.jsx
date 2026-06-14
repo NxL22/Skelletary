@@ -73,8 +73,132 @@ import { normalizeTemplateContentSpacing } from "./lib/reportFormatting";
 import { blankVariables, fillVariables, hasVariables } from "./lib/variables";
 
 const APP_VERSION = "2.0.0";
-const TEMPLATES_PER_PAGE = 10;
 const TOAST_DURATION_MS = 4000;
+const MOBILE_VIEWPORT_MAX_WIDTH = 639;
+const TEMPLATE_GRID_GAP_PX = 16;
+const TEMPLATE_CARD_MIN_WIDTH_PX = 240;
+const TEMPLATE_GRID_MAX_COLUMNS = 6;
+const TEMPLATE_GRID_MIN_DESKTOP_ROWS = 3;
+const TEMPLATE_GRID_MAX_DESKTOP_ROWS = 5;
+const TEMPLATE_GRID_MOBILE_PAGE_SIZE = 6;
+const TEMPLATE_CARD_FALLBACK_HEIGHT_PX = 274;
+const TEMPLATE_GRID_BOTTOM_BREATHING_ROOM_PX = 112;
+
+function getViewportWidth() {
+  if (typeof window === "undefined") {
+    return 0;
+  }
+
+  return window.innerWidth;
+}
+
+function useElementMetrics(element, fallbackMetrics) {
+  const [metrics, setMetrics] = useState(fallbackMetrics);
+
+  useEffect(() => {
+    if (!element) {
+      setMetrics(fallbackMetrics);
+      return undefined;
+    }
+
+    function syncElementMetrics() {
+      const rect = element.getBoundingClientRect();
+      setMetrics({
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        documentTop: Math.round(rect.top + window.scrollY),
+      });
+    }
+
+    syncElementMetrics();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", syncElementMetrics);
+      return () => window.removeEventListener("resize", syncElementMetrics);
+    }
+
+    // Observamos la "casa" real de la grilla y la altura real de una tarjeta para
+    // que ancho y alto reaccionen al espacio util, no a supuestos fijos.
+    const observer = new ResizeObserver(() => {
+      syncElementMetrics();
+    });
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [element, fallbackMetrics]);
+
+  return metrics;
+}
+
+function resolveTemplateGridLayout({
+  viewportWidth,
+  viewportHeight,
+  availableWidth,
+  gridDocumentTop,
+  cardHeight,
+}) {
+  if (viewportWidth <= MOBILE_VIEWPORT_MAX_WIDTH) {
+    return {
+      columns: 1,
+      rows: TEMPLATE_GRID_MOBILE_PAGE_SIZE,
+      pageSize: TEMPLATE_GRID_MOBILE_PAGE_SIZE,
+    };
+  }
+
+  const safeAvailableWidth = Math.max(availableWidth, TEMPLATE_CARD_MIN_WIDTH_PX);
+  const inferredColumns = Math.floor(
+    (safeAvailableWidth + TEMPLATE_GRID_GAP_PX) /
+      (TEMPLATE_CARD_MIN_WIDTH_PX + TEMPLATE_GRID_GAP_PX),
+  );
+  const columns = Math.max(2, Math.min(TEMPLATE_GRID_MAX_COLUMNS, inferredColumns || 2));
+  const safeCardHeight = Math.max(cardHeight, TEMPLATE_CARD_FALLBACK_HEIGHT_PX);
+  const availableHeight = Math.max(
+    safeCardHeight,
+    viewportHeight - gridDocumentTop - TEMPLATE_GRID_BOTTOM_BREATHING_ROOM_PX,
+  );
+  const inferredRows = Math.floor(
+    (availableHeight + TEMPLATE_GRID_GAP_PX) / (safeCardHeight + TEMPLATE_GRID_GAP_PX),
+  );
+  const rows = Math.max(
+    TEMPLATE_GRID_MIN_DESKTOP_ROWS,
+    Math.min(TEMPLATE_GRID_MAX_DESKTOP_ROWS, inferredRows || TEMPLATE_GRID_MIN_DESKTOP_ROWS),
+  );
+
+  return {
+    columns,
+    rows,
+    pageSize: columns * rows,
+  };
+}
+
+function useViewportSize() {
+  const [viewportSize, setViewportSize] = useState(() => ({
+    width: getViewportWidth(),
+    height: typeof window === "undefined" ? 0 : window.innerHeight,
+  }));
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    function syncViewportSize() {
+      setViewportSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+
+    // Leemos el viewport real porque ahora el layout decide columnas y filas
+    // segun el espacio util disponible, no con valores fijos.
+    syncViewportSize();
+    window.addEventListener("resize", syncViewportSize);
+
+    return () => window.removeEventListener("resize", syncViewportSize);
+  }, []);
+
+  return viewportSize;
+}
 
 function getInitialLocalTemplates() {
   const storedTemplates = loadTemplates();
@@ -99,6 +223,10 @@ function getViewHeading(activeView) {
 
 export default function App() {
   const backendConfigured = isSupabaseConfigured();
+  const viewportSize = useViewportSize();
+  const viewportWidth = viewportSize.width;
+  const [templateGridHost, setTemplateGridHost] = useState(null);
+  const [templateCardProbe, setTemplateCardProbe] = useState(null);
   const [templates, setTemplates] = useState(getInitialLocalTemplates);
   const [legacyTemplatesSnapshot, setLegacyTemplatesSnapshot] = useState(() => loadTemplates() || []);
   const [searchValue, setSearchValue] = useState("");
@@ -145,12 +273,43 @@ export default function App() {
     query: deferredQuery,
     activeView,
   });
-  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / TEMPLATES_PER_PAGE));
+  const templateGridFallbackMetrics = useMemo(
+    () => ({
+      width: viewportWidth,
+      height: 0,
+      documentTop: 0,
+    }),
+    [viewportWidth],
+  );
+  const templateCardFallbackMetrics = useMemo(
+    () => ({
+      width: 0,
+      height: TEMPLATE_CARD_FALLBACK_HEIGHT_PX,
+      documentTop: 0,
+    }),
+    [],
+  );
+  const templateGridMetrics = useElementMetrics(templateGridHost, templateGridFallbackMetrics);
+  const templateCardMetrics = useElementMetrics(templateCardProbe, templateCardFallbackMetrics);
+  const templateGridLayout = resolveTemplateGridLayout({
+    viewportWidth,
+    viewportHeight: viewportSize.height,
+    availableWidth: templateGridMetrics.width,
+    gridDocumentTop: templateGridMetrics.documentTop,
+    cardHeight: templateCardMetrics.height,
+  });
+  const templatesPerPage = templateGridLayout.pageSize;
+  // La misma fuente de verdad controla columnas y page size para que la pagina
+  // siempre corte exactamente donde termina la ultima fila visible.
+  const templateGridStyle = {
+    gridTemplateColumns: `repeat(${templateGridLayout.columns}, minmax(0, 1fr))`,
+  };
+  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / templatesPerPage));
   const resolvedPage = Math.min(currentPage, totalPages);
-  const pageStartIndex = (resolvedPage - 1) * TEMPLATES_PER_PAGE;
+  const pageStartIndex = (resolvedPage - 1) * templatesPerPage;
   const paginatedTemplates = filteredTemplates.slice(
     pageStartIndex,
-    pageStartIndex + TEMPLATES_PER_PAGE,
+    pageStartIndex + templatesPerPage,
   );
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) || null;
   const categories = getTemplateCategories(templates);
@@ -770,7 +929,7 @@ export default function App() {
     <div className="relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(123,223,246,0.08),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(184,181,255,0.08),transparent_20%),radial-gradient(circle_at_bottom_right,rgba(246,171,200,0.08),transparent_24%)]" />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-[1880px] flex-col gap-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 2xl:gap-7 2xl:px-10">
         <Header
           accessState={accessState}
           addTemplateDisabled={!addTemplateEnabled}
@@ -822,7 +981,7 @@ export default function App() {
           </div>
         ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[292px_minmax(0,1fr)] 2xl:gap-7 2xl:grid-cols-[320px_minmax(0,1fr)]">
           <CategorySidebar
             categories={categories}
             activeView={activeView}
@@ -832,7 +991,7 @@ export default function App() {
             recentCount={recentCount}
           />
 
-          <main className="space-y-4">
+          <main className="space-y-4 2xl:space-y-5">
             <div ref={resultsTopRef} className="glass-panel rounded-[28px] p-4 shadow-card">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -873,19 +1032,24 @@ export default function App() {
                   currentPage={resolvedPage}
                   totalPages={totalPages}
                   totalItems={filteredTemplates.length}
-                  pageSize={TEMPLATES_PER_PAGE}
+                  pageSize={templatesPerPage}
                   onPageChange={handlePageChange}
                 />
 
-                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                  {paginatedTemplates.map((template) => (
-                    <TemplateCard
+                <div ref={setTemplateGridHost} className="grid gap-4" style={templateGridStyle}>
+                  {paginatedTemplates.map((template, index) => (
+                    <div
                       key={template.id}
-                      template={template}
-                      onOpen={openTemplate}
-                      onCopy={handleCopy}
-                      onToggleFavorite={handleToggleFavorite}
-                    />
+                      ref={index === 0 ? setTemplateCardProbe : null}
+                      className="h-full"
+                    >
+                      <TemplateCard
+                        template={template}
+                        onOpen={openTemplate}
+                        onCopy={handleCopy}
+                        onToggleFavorite={handleToggleFavorite}
+                      />
+                    </div>
                   ))}
                 </div>
               </>
@@ -928,7 +1092,9 @@ export default function App() {
 
         <div className="pb-1 text-center text-xs uppercase tracking-[0.18em] text-slate-500">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-slate-400">
-            <Heart className="h-3.5 w-3.5 fill-rose text-rose drop-shadow-[0_0_10px_rgba(246,171,200,0.45)]" />
+            <span className="footer-heart-shell" aria-hidden="true">
+              <Heart className="footer-heart-icon h-3.5 w-3.5 fill-rose text-rose" />
+            </span>
             Hecho con cariño para mi esposa
           </div>
         </div>

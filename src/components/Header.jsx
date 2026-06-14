@@ -85,7 +85,7 @@ function HeroMascot({ missing, onMissing }) {
   }
 
   return (
-    <div className="relative flex min-h-[320px] items-end justify-center overflow-hidden rounded-[28px] border border-cyan/10 bg-[linear-gradient(180deg,#f5fbff_0%,#e8f1f9_56%,#dce8f5_100%)] px-4 pt-5">
+    <div className="relative flex min-h-[320px] items-end justify-center overflow-hidden rounded-[28px] border border-cyan/10 bg-[linear-gradient(180deg,#f5fbff_0%,#e8f1f9_56%,#dce8f5_100%)] px-4 pt-5 lg:min-h-[340px] 2xl:min-h-[380px] 2xl:px-6 2xl:pt-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(123,223,246,0.18),transparent_28%),radial-gradient(circle_at_75%_18%,rgba(184,181,255,0.18),transparent_20%)]" />
       <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(40,86,128,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(40,86,128,0.08)_1px,transparent_1px)] [background-size:24px_24px]" />
       <div className="pointer-events-none absolute inset-x-8 top-6 h-px bg-gradient-to-r from-transparent via-cyan/50 to-transparent" />
@@ -126,11 +126,11 @@ export default function Header({
   const accessSummary = getAccessCountdownLabel(profile, accessState);
 
   return (
-    <header className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/60 p-5 shadow-glow sm:p-7">
+    <header className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/60 p-5 shadow-glow sm:p-7 xl:p-8 2xl:p-9">
       <div className="scan-grid absolute inset-0 bg-grid opacity-30" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(123,223,246,0.16),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(246,171,200,0.16),transparent_32%)]" />
 
-      <div className="relative grid gap-6 lg:grid-cols-[1.15fr_0.95fr] lg:items-stretch">
+      <div className="relative grid gap-6 lg:grid-cols-[1.12fr_0.88fr] lg:items-stretch 2xl:gap-7 2xl:grid-cols-[1.18fr_0.92fr]">
         <div className="flex flex-col justify-between">
           <div>
             <div className="mb-5 flex items-center gap-4">
@@ -141,7 +141,7 @@ export default function Header({
                   <Sparkles className="h-3.5 w-3.5" />
                   Asistente radiologico
                 </div>
-                <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+                <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl 2xl:text-[3.7rem]">
                   Skelletary
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
@@ -150,8 +150,8 @@ export default function Header({
               </div>
             </div>
 
-            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-              <SurfaceCard className="min-h-[216px]">
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.85fr)] 2xl:gap-4">
+              <SurfaceCard className="min-h-[216px] 2xl:min-h-[228px]">
                 <CardEyebrow>Flujo recomendado</CardEyebrow>
                 <p className="mt-4 max-w-xl font-display text-[clamp(1.7rem,2.4vw,2.3rem)] leading-[1.28] text-white">
                   Busca, completa variables y copia sin friccion.
@@ -173,7 +173,7 @@ export default function Header({
                 as="button"
                 type="button"
                 onClick={onAccountClick}
-                className="min-h-[216px] text-left transition duration-200 hover:border-cyan/35 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_40px_rgba(10,24,45,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/70"
+                className="min-h-[216px] text-left transition duration-200 hover:border-cyan/35 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_40px_rgba(10,24,45,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/70 2xl:min-h-[228px]"
                 title="Abre el detalle de tu cuenta y estado de acceso"
               >
                 <CardEyebrow>Cuenta</CardEyebrow>
@@ -235,7 +235,7 @@ export default function Header({
           </div>
         </div>
 
-        <div className="glass-panel relative overflow-hidden rounded-[28px] p-4">
+        <div className="glass-panel relative overflow-hidden rounded-[28px] p-4 2xl:p-5">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(184,181,255,0.16),transparent_40%)]" />
 
           <div className="relative flex h-full flex-col gap-4">
