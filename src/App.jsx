@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import CategorySidebar from "./components/CategorySidebar";
 import PaginationControls from "./components/PaginationControls";
+import AnimatedLockIcon from "./components/AnimatedLockIcon";
 import TemplateCard from "./components/TemplateCard";
 import TemplateDetailModal from "./components/TemplateDetailModal";
 import TemplateEditorModal from "./components/TemplateEditorModal";
@@ -989,6 +990,7 @@ export default function App() {
             counts={categoryCounts}
             favoriteCount={favoriteCount}
             recentCount={recentCount}
+            viewportWidth={viewportWidth}
           />
 
           <main className="space-y-4 2xl:space-y-5">
@@ -1083,7 +1085,12 @@ export default function App() {
                 </div>
               </div>
 
-              <button type="button" onClick={() => setPinMode("unlock")} className="button-primary">
+              <button
+                type="button"
+                onClick={() => setPinMode("unlock")}
+                className="button-primary group"
+              >
+                <AnimatedLockIcon mode="unlock" className="h-4 w-4" />
                 Desbloquear
               </button>
             </div>

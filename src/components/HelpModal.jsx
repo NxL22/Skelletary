@@ -1,4 +1,5 @@
-import { Copy, FileSpreadsheet, Plus, Search, Sparkles, Unlock } from "lucide-react";
+import { Copy, FileSpreadsheet, Plus, Search, Sparkles } from "lucide-react";
+import AnimatedLockIcon from "./AnimatedLockIcon";
 import ModalShell from "./ModalShell";
 
 function GuideCard({ icon: Icon, label, title, description, children }) {
@@ -58,7 +59,7 @@ export default function HelpModal({
                 }}
                 disabled={createTemplateDisabled}
                 title={createTemplateDisabled ? "Necesitas una cuenta activa para crear plantillas" : undefined}
-                className="button-primary"
+                className="button-primary group"
               >
                 <Plus className="h-4 w-4" />
                 Crear plantilla
@@ -72,14 +73,14 @@ export default function HelpModal({
                 }}
                 disabled={unlockDisabled}
                 title={unlockDisabled ? "Necesitas una cuenta activa para editar" : undefined}
-                className="button-primary"
+                className="button-primary group"
               >
-                <Unlock className="h-4 w-4" />
+                <AnimatedLockIcon mode="unlock" className="h-4 w-4" />
                 Desbloquear edicion
               </button>
             )}
 
-            <button type="button" onClick={onClose} className="button-secondary">
+            <button type="button" onClick={onClose} className="button-secondary group">
               Cerrar guia
             </button>
           </div>

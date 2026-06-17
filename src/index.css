@@ -66,12 +66,121 @@ body {
   @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:-translate-y-0.5 hover:border-cyan/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-white/10 disabled:hover:bg-white/5;
 }
 
+.button-no-lift:hover,
+.button-no-lift:focus-visible {
+  transform: none;
+}
+
+.button-no-lift:hover > svg,
+.button-no-lift:focus-visible > svg {
+  transform: none;
+}
+
+.button-primary > svg,
+.button-secondary > svg,
+.button-danger > svg {
+  transition:
+    transform 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease;
+}
+
+.button-primary:hover > svg,
+.button-primary:focus-visible > svg,
+.button-secondary:hover > svg,
+.button-secondary:focus-visible > svg,
+.button-danger:hover > svg,
+.button-danger:focus-visible > svg {
+  transform: translateY(-1px) scale(1.04);
+}
+
 .button-danger {
   @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-rose/30 bg-rose/10 px-4 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-rose/15;
 }
 
 .badge-soft {
   @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300;
+}
+
+.lock-icon-shell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.lock-icon {
+  position: absolute;
+  inset: 0;
+  transition:
+    transform 460ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 460ms ease;
+  transform-origin: center;
+}
+
+.lock-icon-shell[data-mode="unlock"] .lock-icon-closed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lock-icon-shell[data-mode="unlock"] .lock-icon-open {
+  opacity: 0;
+  transform: translateY(3px);
+}
+
+/* Dejamos una transicion sobria para que el candado cambie de estado sin verse jugueteado. */
+.group:hover .lock-icon-shell[data-mode="unlock"] .lock-icon-closed,
+.group:focus-visible .lock-icon-shell[data-mode="unlock"] .lock-icon-closed {
+  opacity: 0;
+  transform: translateY(-2px);
+}
+
+.group:hover .lock-icon-shell[data-mode="unlock"] .lock-icon-open,
+.group:focus-visible .lock-icon-shell[data-mode="unlock"] .lock-icon-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lock-icon-shell[data-mode="lock"] .lock-icon-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lock-icon-shell[data-mode="lock"] .lock-icon-closed {
+  opacity: 0;
+  transform: translateY(3px);
+}
+
+.group:hover .lock-icon-shell[data-mode="lock"] .lock-icon-open,
+.group:focus-visible .lock-icon-shell[data-mode="lock"] .lock-icon-open {
+  opacity: 0;
+  transform: translateY(-2px);
+}
+
+.group:hover .lock-icon-shell[data-mode="lock"] .lock-icon-closed,
+.group:focus-visible .lock-icon-shell[data-mode="lock"] .lock-icon-closed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-primary > svg,
+  .button-secondary > svg,
+  .button-danger > svg,
+  .lock-icon {
+    transition: none;
+  }
+
+  .button-primary:hover > svg,
+  .button-primary:focus-visible > svg,
+  .button-secondary:hover > svg,
+  .button-secondary:focus-visible > svg,
+  .button-danger:hover > svg,
+  .button-danger:focus-visible > svg {
+    transform: none;
+  }
 }
 
 .login-card {

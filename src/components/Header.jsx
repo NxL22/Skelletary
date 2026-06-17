@@ -2,16 +2,16 @@ import {
   Bone,
   CircleHelp,
   Import,
-  Lock,
   LogOut,
   Plus,
   Pointer,
   ShieldCheck,
   Sparkles,
-  Unlock,
+  Lock,
 } from "lucide-react";
 import { useState } from "react";
 import { getAccessCountdownLabel, getProfileDisplayName } from "../lib/access";
+import AnimatedLockIcon from "./AnimatedLockIcon";
 
 function getPublicAssetPath(relativePath) {
   // Vite expone `public/` desde la base de la app. Armamos la URL asi para que
@@ -203,13 +203,13 @@ export default function Header({
                   onClick={onNewTemplate}
                   disabled={addTemplateDisabled}
                   title={addTemplateDisabled ? "Necesitas una cuenta activa para crear plantillas" : undefined}
-                  className="button-primary"
+                  className="button-primary group"
                 >
                   <Plus className="h-4 w-4" />
                   Nueva plantilla
                 </button>
-                <button type="button" onClick={onLockClick} className="button-secondary">
-                  <Lock className="h-4 w-4" />
+                <button type="button" onClick={onLockClick} className="button-secondary group">
+                  <AnimatedLockIcon mode="lock" className="h-4 w-4" />
                   Bloquear edicion
                 </button>
               </>
@@ -219,15 +219,15 @@ export default function Header({
                 onClick={onUnlockClick}
                 disabled={unlockDisabled}
                 title={unlockDisabled ? "Necesitas una cuenta activa para editar" : undefined}
-                className="button-primary"
+                className="button-primary group"
               >
-                <Unlock className="h-4 w-4" />
+                <AnimatedLockIcon mode="unlock" className="h-4 w-4" />
                 Desbloquear edicion
               </button>
             )}
 
             {hasSession ? (
-              <button type="button" onClick={onSignOut} className="button-secondary">
+              <button type="button" onClick={onSignOut} className="button-secondary group">
                 <LogOut className="h-4 w-4" />
                 Salir
               </button>
@@ -252,7 +252,7 @@ export default function Header({
                   type="button"
                   title="Abre una guia rapida para aprender a usar Skelletary"
                   onClick={onHelpClick}
-                  className="button-secondary mt-4"
+                  className="button-secondary group mt-4"
                 >
                   Skelly te guia
                   <CircleHelp className="h-4 w-4" />

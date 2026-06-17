@@ -44,7 +44,7 @@ function PagerButton({ disabled, onClick, ariaLabel, children }) {
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className="button-secondary !rounded-full !px-3 !py-2 disabled:cursor-not-allowed disabled:opacity-40"
+      className="button-secondary button-no-lift !rounded-full !px-3 !py-2 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {children}
     </button>
