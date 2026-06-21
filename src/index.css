@@ -192,31 +192,32 @@ body {
 }
 
 .login-field {
-  @apply h-14 w-full rounded-[18px] border border-white/10 px-4 text-[15px] text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan/40 focus:bg-white/[0.05] focus:ring-1 focus:ring-cyan/25;
+  @apply h-16 w-full rounded-[18px] border border-white/10 px-4 text-[15px] text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan/40 focus:bg-white/[0.05] focus:ring-1 focus:ring-cyan/25;
   background: rgba(11, 20, 24, 0.92);
 }
 
 .login-field-with-icon {
-  padding-left: 4.25rem;
+  padding-left: 4.5rem;
 }
 
 .login-primary-button {
-  @apply relative inline-flex min-h-[3.5rem] items-center justify-center overflow-hidden rounded-[18px] px-6 text-base font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60;
+  @apply relative inline-flex min-h-[3.75rem] items-center justify-center overflow-hidden rounded-[18px] px-6 text-base font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60;
   background: linear-gradient(90deg, #31c9d0 0%, #3bd7de 100%);
   box-shadow: 0 18px 42px rgba(54, 214, 222, 0.24);
 }
 
 .login-primary-button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 24px 52px rgba(54, 214, 222, 0.32);
 }
 
 .login-secondary-button {
-  @apply inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-[18px] border border-white/10 bg-white/[0.03] px-4 text-sm font-medium text-slate-100 transition;
+  @apply inline-flex min-h-[3.5rem] items-center justify-center gap-2 rounded-[18px] border border-white/10 bg-white/[0.03] px-4 text-sm font-medium text-slate-100 transition;
 }
 
 .login-secondary-button:hover {
   @apply border-cyan/25 bg-white/[0.05];
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .login-noise {
@@ -267,7 +268,7 @@ body {
   }
 
   .login-title {
-    font-size: 2.05rem;
+    font-size: 2.15rem;
   }
 
   .login-support-copy {
@@ -277,15 +278,15 @@ body {
   }
 
   .login-field {
-    height: 3.35rem;
+    height: 3.5rem;
   }
 
   .login-primary-button {
-    min-height: 3.45rem;
+    min-height: 3.65rem;
   }
 
   .login-secondary-button {
-    min-height: 3rem;
+    min-height: 3.4rem;
   }
 }
 
@@ -391,8 +392,8 @@ body {
   }
 
   .login-brand-box {
-    height: 3.5rem;
-    width: 3.5rem;
+    height: 4rem;
+    width: 4rem;
   }
 
   .login-heading-block {

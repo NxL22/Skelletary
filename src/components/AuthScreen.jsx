@@ -1,7 +1,6 @@
 import {
   AlertTriangle,
   ArrowRight,
-  Bone,
   CheckCircle2,
   KeyRound,
   Loader2,
@@ -15,6 +14,15 @@ import { AUTH_REDIRECT_MODE } from "../lib/auth";
 import PasswordField from "./PasswordField";
 
 const LOGIN_BACKGROUND_IMAGE = "/fondo%20del%20login/login-radiografia.png";
+
+function getPublicAssetPath(relativePath) {
+  // Armamos la URL desde `public/` para que la imagen funcione igual
+  // en local y si la app termina publicada dentro de una subruta.
+  const normalizedPath = relativePath.replace(/^\/+/, "");
+  return `${import.meta.env.BASE_URL}${encodeURI(normalizedPath)}`;
+}
+
+const LOGIN_MASCOT_IMAGE = getPublicAssetPath("imagenes de Skelly/skelly_login.png");
 
 function getStatusLabel({ accessState, authMode, hasSession, loading }) {
   if (loading) {
@@ -155,6 +163,24 @@ function InputLeadingIcon({ icon: Icon }) {
       <Icon className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 transition group-focus-within:text-cyan" />
       <span className="pointer-events-none absolute left-[3.2rem] top-1/2 h-5 w-px -translate-y-1/2 bg-white/10" />
     </>
+  );
+}
+
+function LoginBrandBadge() {
+  return (
+    <div className="relative shrink-0">
+      <div className="absolute -inset-2 rounded-full bg-cyan/24 blur-2xl" />
+      <div className="login-brand-box relative flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.11),rgba(255,255,255,0.035))] p-[3px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_30px_rgba(3,10,18,0.34)] md:h-[4.8rem] md:w-[4.8rem]">
+        <div className="relative h-full w-full overflow-hidden rounded-full border border-cyan/12 bg-[radial-gradient(circle_at_top,#ffffff_0%,#f7fbff_55%,#e7f0f7_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
+          {/* Avatar de Skelly centrado sin zoom excesivo, se ve natural. */}
+          <img
+            src={LOGIN_MASCOT_IMAGE}
+            alt="Skelly en el acceso de Skelletary"
+            className="h-full w-full scale-[1.4] object-cover object-center"
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -310,12 +336,7 @@ export default function AuthScreen({
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
             <div className="flex items-start gap-4">
-              <div className="relative shrink-0">
-                <div className="absolute inset-0 rounded-[20px] bg-cyan/15 blur-xl" />
-                <div className="login-brand-box relative flex h-16 w-16 items-center justify-center rounded-[20px] border border-white/10 bg-white/[0.04] md:h-[4.1rem] md:w-[4.1rem]">
-                  <Bone className="h-7 w-7 text-white/90" />
-                </div>
-              </div>
+              <LoginBrandBadge />
 
               <div className="pt-1">
                 <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan/95">
@@ -328,16 +349,16 @@ export default function AuthScreen({
               </div>
             </div>
 
-            <div className="login-heading-block mt-10 md:mt-7">
+            <div className="login-heading-block mt-12 md:mt-8">
               {!isDefaultLoginView ? (
-                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-500">
+                <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-slate-500">
                   {headline.eyebrow}
                 </p>
               ) : null}
-              <h1 className="login-title font-display text-[2.2rem] font-semibold leading-[1.05] tracking-[-0.04em] text-white">
+              <h1 className="login-title font-display text-[2.4rem] font-semibold leading-[1.08] tracking-[-0.04em] text-white">
                 {headline.title}
               </h1>
-              <p className="login-support-copy mt-3 max-w-[30rem] text-[15px] leading-7 text-slate-400">
+              <p className="login-support-copy mt-4 max-w-[30rem] text-[15px] leading-7 text-slate-400">
                 {headline.description}
               </p>
             </div>
@@ -352,7 +373,7 @@ export default function AuthScreen({
               hasSession ? (
                 <form
                   onSubmit={handlePasswordSetup}
-                  className="login-form-stack mt-8 space-y-5 md:mt-7 md:space-y-4"
+                  className="login-form-stack mt-10 space-y-6 md:mt-8 md:space-y-5"
                 >
                   <label className="block">
                     <span className="mb-3 block text-sm font-medium text-slate-200 md:mb-2.5">
@@ -430,7 +451,7 @@ export default function AuthScreen({
               panelMode === "forgot" ? (
                 <form
                   onSubmit={handleRecoveryRequest}
-                  className="login-form-stack mt-8 space-y-5 md:mt-7 md:space-y-4"
+                  className="login-form-stack mt-10 space-y-6 md:mt-8 md:space-y-5"
                 >
                   <label className="block">
                     <span className="mb-3 block text-sm font-medium text-slate-200 md:mb-2.5">
@@ -486,7 +507,7 @@ export default function AuthScreen({
               ) : (
                 <form
                   onSubmit={handleLogin}
-                  className="login-form-stack mt-8 space-y-5 md:mt-7 md:space-y-4"
+                  className="login-form-stack mt-10 space-y-6 md:mt-8 md:space-y-5"
                 >
                   <label className="block">
                     <span className="mb-3 block text-sm font-medium text-slate-200 md:mb-2.5">
