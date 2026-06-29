@@ -1,4 +1,4 @@
-import { Files, Save, Trash2, X } from "lucide-react";
+import { Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getVoiceUsageHint, mergeVoiceTranscript } from "../lib/voiceInput";
 import ModalShell from "./ModalShell";
@@ -19,7 +19,6 @@ export default function TemplateEditorModal({
   categories,
   onClose,
   onSave,
-  onDuplicate,
   onDelete,
 }) {
   const [form, setForm] = useState(emptyForm());
@@ -35,7 +34,7 @@ export default function TemplateEditorModal({
         ? {
             title: template.title,
             category: template.category,
-            shortcut: template.shortcut,
+            shortcut: template.shortcut || "",
             content: template.content,
           }
         : emptyForm(),
@@ -69,16 +68,10 @@ export default function TemplateEditorModal({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-3">
             {template ? (
-              <>
-                <button type="button" onClick={() => onDuplicate(template)} className="button-secondary">
-                  <Files className="h-4 w-4" />
-                  Duplicar
-                </button>
-                <button type="button" onClick={() => onDelete(template)} className="button-danger">
-                  <Trash2 className="h-4 w-4" />
-                  Eliminar
-                </button>
-              </>
+              <button type="button" onClick={() => onDelete(template)} className="button-danger">
+                <Trash2 className="h-4 w-4" />
+                Eliminar
+              </button>
             ) : null}
           </div>
 
@@ -143,14 +136,17 @@ export default function TemplateEditorModal({
         </div>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-200">Shortcut</span>
+          <span className="mb-2 block text-sm font-medium text-slate-200">Atajos editables</span>
           <input
             type="text"
             value={form.shortcut}
             onChange={(event) => updateField("shortcut", event.target.value)}
             className="field-shell font-mono"
-            placeholder="Ej. ecoabdnormal"
+            placeholder="Ej. ecoabdnormal, abdomen normal"
           />
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            Puedes cambiar estos atajos cuando quieras. Escribe varios separados por coma y el primero se usa como atajo principal.
+          </p>
         </label>
 
         <label className="block">
@@ -176,6 +172,9 @@ export default function TemplateEditorModal({
           />
           <p className="mt-2 text-xs leading-5 text-slate-500">
             {getVoiceUsageHint("medical-content")}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            Si no escribes <span className="font-mono">{"{{antecedente}}"}</span>, Skelletary lo agregara al usar la plantilla y, si queda en blanco, copiara <span className="font-medium text-slate-300">Sin diagnóstico</span>.
           </p>
         </label>
 

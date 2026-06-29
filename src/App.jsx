@@ -1,3 +1,15 @@
+// App.jsx
+// ============================================================
+// Orquestador principal de la aplicacion. Vive en la raiz y decide:
+//   1. Si mostrar AuthScreen o el Dashboard segun la sesion.
+//   2. Cargar la biblioteca del usuario desde Supabase o desde cache local.
+//   3. Manejar la migracion de datos locales al primer login.
+//   4. Orquestar los modales (detalle, edicion, variables, ayuda, etc.).
+//   5. Disparar el saludo de Skelly cuando el dashboard esta listo.
+//
+// Toda la logica de negocio vive en `src/lib/`. Este archivo solo conecta
+// piezas y maneja estado de UI.
+
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Heart, Layers3, ShieldAlert } from "lucide-react";
 import Header from "./components/Header";
@@ -16,7 +28,6 @@ import HelpModal from "./components/HelpModal";
 import ToastStack from "./components/ToastStack";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import AuthScreen from "./components/AuthScreen";
-import ImportTemplatesModal from "./components/ImportTemplatesModal";
 import PasswordChangeModal from "./components/PasswordChangeModal";
 import { copyText, playCopyFeedback } from "./lib/clipboard";
 import { resolveAccessState } from "./lib/access";
@@ -34,10 +45,8 @@ import {
 } from "./lib/auth";
 import {
   deleteUserTemplateRemote,
-  duplicateToPersonalLibrary,
   fetchRemoteWorkspace,
   hasMeaningfulLegacyData,
-  importUserTemplatesRemote,
   migrateLocalWorkspaceToRemote,
   saveUserTemplateRemote,
   upsertTemplateStatsRemote,
@@ -62,7 +71,6 @@ import { isSupabaseConfigured } from "./lib/supabaseClient";
 import {
   SPECIAL_VIEWS,
   createTemplate,
-  duplicateTemplateRecord,
   filterAndSortTemplates,
   getCategoryCounts,
   getTemplateCategories,
@@ -240,7 +248,6 @@ export default function App() {
   const [pinMode, setPinMode] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
   const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
   const [session, setSession] = useState(() => loadCachedSession());
   const [authRedirectMode, setAuthRedirectMode] = useState(() => readAuthRedirectModeFromUrl());
@@ -249,6 +256,8 @@ export default function App() {
   const [migrationPromptVisible, setMigrationPromptVisible] = useState(false);
   const [editUnlocked, setEditUnlocked] = useState(isEditUnlocked());
   const [unlockExpiresAt, setUnlockExpiresAt] = useState(getEditUnlockExpiresAt());
+  const [pendingSkellyIntro, setPendingSkellyIntro] = useState(false);
+  const [skellyIntroToken, setSkellyIntroToken] = useState(0);
   const [toasts, setToasts] = useState([]);
   const resultsTopRef = useRef(null);
   const toastTimeoutsRef = useRef(new Map());
@@ -355,7 +364,6 @@ export default function App() {
     setSelectedTemplateId(null);
     setEditorState({ open: false, template: null });
     setVariableState({ open: false, template: null });
-    setImportOpen(false);
     setSettingsOpen(false);
     setHelpOpen(false);
     setPasswordChangeOpen(false);
@@ -521,6 +529,30 @@ export default function App() {
     setMigrationPromptVisible(canOfferMigration);
   }, [canOfferMigration]);
 
+  useEffect(() => {
+    if (!pendingSkellyIntro) {
+      return;
+    }
+
+    const canShowDashboard =
+      !workspaceLoading && Boolean(session?.user?.id) && accessState.hasAccess && !shouldRenderAuthScreen;
+
+    if (!canShowDashboard) {
+      return;
+    }
+
+    // Disparamos el saludo solo cuando el dashboard ya quedo realmente listo.
+    // Asi la transicion login -> carga -> app no se come la entrada de Skelly.
+    setSkellyIntroToken((current) => current + 1);
+    setPendingSkellyIntro(false);
+  }, [
+    accessState.hasAccess,
+    pendingSkellyIntro,
+    session?.user?.id,
+    shouldRenderAuthScreen,
+    workspaceLoading,
+  ]);
+
   function dismissToast(id) {
     const timeoutId = toastTimeoutsRef.current.get(id);
 
@@ -591,6 +623,7 @@ export default function App() {
 
   async function handleAuthenticate({ email, password }) {
     await signInWithPassword(email, password);
+    setPendingSkellyIntro(true);
     pushToast("Sesion iniciada", "success");
   }
 
@@ -604,6 +637,7 @@ export default function App() {
     clearAuthRedirectModeFromUrl();
     setAuthRedirectMode(AUTH_REDIRECT_MODE.default);
     await refreshRemoteWorkspace();
+    setPendingSkellyIntro(true);
     pushToast("Tu contraseña ya fue actualizada.", "success");
   }
 
@@ -728,11 +762,6 @@ export default function App() {
       return;
     }
 
-    if (template && !template.isUserOwned) {
-      pushToast("Estas plantillas se editan fuera de la app y luego se publican.", "info");
-      return;
-    }
-
     setSelectedTemplateId(null);
     setEditorState({ open: true, template });
   }
@@ -744,8 +773,21 @@ export default function App() {
     }
 
     try {
-      const localTemplate = originalTemplate
-        ? updateTemplateRecord(originalTemplate, form)
+      // Las plantillas oficiales se "promueven" automaticamente a personales al
+      // guardar: conservamos el mismo ID para que el merge en la nube las siga
+      // mostrando donde estaba la oficial original.
+      const isPromotingOfficial = Boolean(originalTemplate && !originalTemplate.isUserOwned);
+      const baseRecord = isPromotingOfficial
+        ? {
+            ...originalTemplate,
+            libraryOrigin: "personal",
+            isUserOwned: true,
+            sourceType: "duplicated_from_core",
+          }
+        : originalTemplate;
+
+      const localTemplate = baseRecord
+        ? updateTemplateRecord(baseRecord, form)
         : createTemplate({
             ...form,
             libraryOrigin: "personal",
@@ -753,13 +795,18 @@ export default function App() {
             sourceType: "manual",
           });
 
-      const savedTemplate = await saveUserTemplateRemote(session.user.id, localTemplate, originalTemplate);
+      const savedTemplate = await saveUserTemplateRemote(session.user.id, localTemplate, baseRecord);
 
       if (originalTemplate) {
         setTemplates((current) =>
           current.map((entry) => (entry.id === originalTemplate.id ? savedTemplate : entry)),
         );
-        pushToast("Plantilla actualizada", "success");
+        pushToast(
+          isPromotingOfficial
+            ? "Tu edicion quedo guardada en tu biblioteca"
+            : "Plantilla actualizada",
+          "success",
+        );
       } else {
         setTemplates((current) => [savedTemplate, ...current]);
         setCurrentPage(1);
@@ -772,30 +819,44 @@ export default function App() {
     }
   }
 
-  async function handleDuplicate(template) {
+  async function handleUpdateShortcuts(template, nextShortcuts) {
     if (!session?.user?.id) {
-      pushToast("Debes iniciar sesion para duplicar plantillas.", "error");
-      return;
+      pushToast("Debes iniciar sesion para editar atajos.", "error");
+      throw new Error("Sesion requerida.");
     }
 
     try {
-      const duplicate = hasCloudAccess
-        ? await duplicateToPersonalLibrary(session.user.id, template)
-        : duplicateTemplateRecord(template);
+      // Para atajos, las plantillas oficiales se promueven igual a personales:
+      // copiamos la fila a user_templates con los atajos nuevos y el mismo ID.
+      const isPromotingOfficial = !template.isUserOwned;
+      const baseRecord = isPromotingOfficial
+        ? {
+            ...template,
+            libraryOrigin: "personal",
+            isUserOwned: true,
+            sourceType: "duplicated_from_core",
+          }
+        : template;
 
-      setTemplates((current) => [duplicate, ...current]);
-      setCurrentPage(1);
-      closeEditor();
-      setSelectedTemplateId(duplicate.id);
-      pushToast("Plantilla duplicada", "success");
+      const updatedLocalTemplate = updateTemplateRecord(baseRecord, {
+        shortcut: nextShortcuts.join(", "),
+      });
+      const savedTemplate = await saveUserTemplateRemote(session.user.id, updatedLocalTemplate, baseRecord);
+
+      setTemplates((current) =>
+        current.map((entry) => (entry.id === template.id ? savedTemplate : entry)),
+      );
+      pushToast("Atajos actualizados", "success");
+      return savedTemplate;
     } catch (error) {
-      pushToast(error.message || "No pudimos duplicar la plantilla.", "error");
+      pushToast(error.message || "No pudimos guardar los atajos.", "error");
+      throw error;
     }
   }
 
   async function handleDelete(template) {
     if (!template.isUserOwned) {
-      pushToast("Estas plantillas no se eliminan desde la app.", "info");
+      pushToast("Edita primero esta plantilla para poder personalizarla y luego eliminarla.", "info");
       return;
     }
 
@@ -812,31 +873,6 @@ export default function App() {
     } catch (error) {
       pushToast(error.message || "No pudimos eliminar la plantilla.", "error");
     }
-  }
-
-  async function handleImportTemplates({ fileName, importKind, rows }) {
-    if (!session?.user?.id) {
-      throw new Error("Debes iniciar sesion para importar plantillas.");
-    }
-
-    if (!editUnlocked) {
-      throw new Error("Desbloquea la edicion con tu PIN local antes de importar.");
-    }
-
-    const importedTemplates = await importUserTemplatesRemote({
-      userId: session.user.id,
-      fileName,
-      importKind,
-      rows,
-    });
-
-    setTemplates((current) => [...importedTemplates, ...current]);
-    setCurrentPage(1);
-    pushToast(`${importedTemplates.length} plantillas importadas.`, "success");
-  }
-
-  function handleBlockedExport() {
-    pushToast("La exportacion esta deshabilitada para todos en esta fase del producto.", "info");
   }
 
   async function handlePinSubmit(form, mode) {
@@ -939,6 +975,7 @@ export default function App() {
           editingEnabled={editingEnabled}
           hasSession={Boolean(session?.user?.id)}
           profile={profile}
+          skellyIntroToken={skellyIntroToken}
           unlockDisabled={!editingEnabled}
           unlockExpiresAt={unlockExpiresAt}
           onAccountClick={() => setSettingsOpen(true)}
@@ -1001,10 +1038,10 @@ export default function App() {
                     <Layers3 className="h-3.5 w-3.5 text-cyan" />
                     Vista activa
                   </div>
-                  <h2 className="font-display text-2xl font-semibold text-white">{viewHeading}</h2>
+                    <h2 className="font-display text-2xl font-semibold text-white">{viewHeading}</h2>
                   <p className="mt-1 text-sm text-slate-400">
                     {deferredQuery
-                      ? "Busqueda en tiempo real por titulo, categoria, atajo y contenido."
+                      ? "Busqueda en tiempo real por titulo, categoria, atajos y contenido. Los atajos de tus plantillas se ajustan desde el detalle de la plantilla."
                       : "Orden automatico: favoritas, mas usadas, mas recientes y alfabetico."}
                   </p>
                 </div>
@@ -1063,7 +1100,7 @@ export default function App() {
                   deferredQuery
                     ? "Prueba con otro termino o cambia la categoria seleccionada. Skelly seguira buscando contigo."
                     : editingEnabled
-                      ? "Aun no hay plantillas en esta vista. Puedes crear una nueva o importar desde Excel o CSV."
+                      ? "Aun no hay plantillas en esta vista. Puedes crear una nueva cuando quieras."
                       : "No hay plantillas visibles en este filtro. Cambia de categoria o revisa si ya activaste tu acceso."
                 }
               />
@@ -1079,7 +1116,7 @@ export default function App() {
                 <div>
                   <p className="font-medium text-white">Modo lectura activo</p>
                   <p className="mt-1 text-sm leading-6 text-slate-200">
-                    Puedes buscar, filtrar, copiar y marcar favoritas. Para editar o importar,
+                    Puedes buscar, filtrar, copiar y marcar favoritas. Para editar plantillas,
                     desbloquea la edicion con tu PIN local.
                   </p>
                 </div>
@@ -1097,13 +1134,11 @@ export default function App() {
           </div>
         ) : null}
 
-        <div className="pb-1 text-center text-xs uppercase tracking-[0.18em] text-slate-500">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-slate-400">
-            <span className="footer-heart-shell" aria-hidden="true">
-              <Heart className="footer-heart-icon h-3.5 w-3.5 fill-rose text-rose" />
-            </span>
-            Hecho con cariño para mi esposa
-          </div>
+        <div className="flex items-center justify-center gap-2 pb-1 text-center text-xs uppercase tracking-[0.18em] text-cyan/85">
+          <span className="footer-heart-shell" aria-hidden="true">
+            <Heart className="footer-heart-icon h-3.5 w-3.5 fill-rose text-rose" />
+          </span>
+          <span>Hecho con cariño para mi esposa</span>
         </div>
       </div>
 
@@ -1117,8 +1152,8 @@ export default function App() {
         onCopyFilled={handleCopyFilledFromDetail}
         onToggleFavorite={handleToggleFavorite}
         onEdit={openEditor}
-        onDuplicate={handleDuplicate}
         onDelete={handleDelete}
+        onUpdateShortcuts={handleUpdateShortcuts}
       />
 
       <TemplateEditorModal
@@ -1127,7 +1162,6 @@ export default function App() {
         categories={categories}
         onClose={closeEditor}
         onSave={handleSaveTemplate}
-        onDuplicate={handleDuplicate}
         onDelete={handleDelete}
       />
 
@@ -1151,22 +1185,12 @@ export default function App() {
         onClose={() => setSettingsOpen(false)}
         accessState={accessState}
         appVersion={APP_VERSION}
-        canImport={editingEnabled}
         canManagePassword={Boolean(session?.user?.id)}
         editUnlocked={editUnlocked}
         profile={profile}
-        onBlockedExport={handleBlockedExport}
         onOpenChangePin={() => {
           setSettingsOpen(false);
           setPinMode("change");
-        }}
-        onOpenImport={() => {
-          if (!editingEnabled) {
-            pushToast("Necesitas una cuenta activa para importar plantillas.", "error");
-            return;
-          }
-
-          setImportOpen(true);
         }}
         onOpenChangePassword={() => {
           setSettingsOpen(false);
@@ -1184,13 +1208,6 @@ export default function App() {
         unlockDisabled={!editingEnabled}
         onUnlockClick={() => setPinMode("unlock")}
         onCreateTemplate={() => openEditor(null)}
-      />
-
-      <ImportTemplatesModal
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        existingTemplates={templates}
-        onImport={handleImportTemplates}
       />
 
       <PasswordChangeModal

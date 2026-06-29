@@ -1,3 +1,13 @@
+// AuthScreen.jsx
+// ============================================================
+// Pantalla de acceso. Maneja tres modos segun el `auth_mode` de la URL:
+//   - login: usuario entra con email + contrasena.
+//   - invite: usuario llega desde el correo de invitacion y define su
+//             contrasena por primera vez.
+//   - recovery: usuario llega desde el correo de recuperacion y define
+//               una nueva contrasena.
+// La pantalla se oculta en cuanto hay sesion valida (App.jsx se encarga).
+
 import {
   AlertTriangle,
   ArrowRight,
@@ -11,16 +21,10 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AUTH_REDIRECT_MODE } from "../lib/auth";
+import { getPublicAssetPath } from "../lib/publicAssets";
 import PasswordField from "./PasswordField";
 
 const LOGIN_BACKGROUND_IMAGE = "/fondo%20del%20login/login-radiografia.png";
-
-function getPublicAssetPath(relativePath) {
-  // Armamos la URL desde `public/` para que la imagen funcione igual
-  // en local y si la app termina publicada dentro de una subruta.
-  const normalizedPath = relativePath.replace(/^\/+/, "");
-  return `${import.meta.env.BASE_URL}${encodeURI(normalizedPath)}`;
-}
 
 const LOGIN_MASCOT_IMAGE = getPublicAssetPath("imagenes de Skelly/skelly_login.png");
 

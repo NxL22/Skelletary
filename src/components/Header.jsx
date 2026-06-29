@@ -1,23 +1,38 @@
 import {
   Bone,
   CircleHelp,
-  Import,
   LogOut,
   Plus,
   Pointer,
   ShieldCheck,
-  Sparkles,
   Lock,
 } from "lucide-react";
 import { useState } from "react";
 import { getAccessCountdownLabel, getProfileDisplayName } from "../lib/access";
+import { getPublicAssetPath } from "../lib/publicAssets";
 import AnimatedLockIcon from "./AnimatedLockIcon";
+import SkellyDashboardMascota from "./SkellyDashboardMascota";
 
-function getPublicAssetPath(relativePath) {
-  // Vite expone `public/` desde la base de la app. Armamos la URL asi para que
-  // las imagenes sigan funcionando tanto en local como si luego se publica en una subruta.
-  const normalizedPath = relativePath.replace(/^\/+/, "");
-  return `${import.meta.env.BASE_URL}${encodeURI(normalizedPath)}`;
+function RadiologyPulseBadge() {
+  return (
+    <div className="radiology-badge">
+      <svg
+        className="radiology-badge__icon"
+        viewBox="0 0 32 16"
+        aria-hidden="true"
+      >
+        <path
+          className="radiology-badge__pulse-base"
+          d="M2 8 H7 L9 4 L12 12 L15 2 L18 14 L21 8 H30"
+        />
+        <path
+          className="radiology-badge__pulse-active"
+          d="M2 8 H7 L9 4 L12 12 L15 2 L18 14 L21 8 H30"
+        />
+      </svg>
+      <span>Asistente radiologico</span>
+    </div>
+  );
 }
 
 function SurfaceCard({ as: Tag = "div", className = "", children, ...props }) {
@@ -69,39 +84,6 @@ function BrandBadge({ missing, onMissing }) {
   );
 }
 
-function HeroMascot({ missing, onMissing }) {
-  if (missing) {
-    return (
-      <div className="flex w-full flex-col items-center justify-center rounded-[24px] border border-dashed border-cyan/20 bg-[linear-gradient(180deg,#f6fbff,#dfe9f4)] px-6 py-8 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[20px] border border-rose/20 bg-rose/10">
-          <Bone className="h-8 w-8 text-rose" />
-        </div>
-        <p className="font-display text-lg font-semibold text-slate-900">Skelly lista para copiar</p>
-        <p className="mt-2 text-sm leading-6 text-slate-400">
-          Si luego agregas o reemplazas <span className="font-mono text-cyan">/public/imagenes de Skelly/skelly-bust.png</span>, este espacio la mostrara automaticamente.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative flex min-h-[320px] items-end justify-center overflow-hidden rounded-[28px] border border-cyan/10 bg-[linear-gradient(180deg,#f5fbff_0%,#e8f1f9_56%,#dce8f5_100%)] px-4 pt-5 lg:min-h-[340px] 2xl:min-h-[380px] 2xl:px-6 2xl:pt-6">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(123,223,246,0.18),transparent_28%),radial-gradient(circle_at_75%_18%,rgba(184,181,255,0.18),transparent_20%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(40,86,128,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(40,86,128,0.08)_1px,transparent_1px)] [background-size:24px_24px]" />
-      <div className="pointer-events-none absolute inset-x-8 top-6 h-px bg-gradient-to-r from-transparent via-cyan/50 to-transparent" />
-      <div className="pointer-events-none absolute left-4 top-4 rounded-full border border-slate-200/60 bg-white/70 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-slate-700 backdrop-blur">
-        Diagnostic mode
-      </div>
-      <img
-        src={getPublicAssetPath("imagenes de Skelly/skelly-bust.png")}
-        alt="Skelly, asistente radiologica"
-        className="relative z-10 h-full w-full object-cover object-[center_14%] scale-[1.08] drop-shadow-[0_24px_35px_rgba(85,120,155,0.35)]"
-        onError={onMissing}
-      />
-    </div>
-  );
-}
-
 export default function Header({
   accessState,
   addTemplateDisabled,
@@ -110,6 +92,7 @@ export default function Header({
   editingEnabled,
   hasSession,
   profile,
+  skellyIntroToken,
   unlockDisabled,
   unlockExpiresAt,
   onAccountClick,
@@ -120,7 +103,6 @@ export default function Header({
   onSignOut,
 }) {
   const [brandMissing, setBrandMissing] = useState(false);
-  const [heroMissing, setHeroMissing] = useState(false);
   const remainingLabel = getRemainingTimeLabel(unlockExpiresAt);
   const accountLabel = getProfileDisplayName(profile);
   const accessSummary = getAccessCountdownLabel(profile, accessState);
@@ -137,10 +119,7 @@ export default function Header({
               <BrandBadge missing={brandMissing} onMissing={() => setBrandMissing(true)} />
 
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-cyan">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Asistente radiologico
-                </div>
+                <RadiologyPulseBadge />
                 <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl 2xl:text-[3.7rem]">
                   Skelletary
                 </h1>
@@ -246,7 +225,7 @@ export default function Header({
                   Tu asistente radiologica
                 </h2>
                 <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
-                  Skelly te ayuda a encontrar, completar e importar plantillas sin friccion tecnica.
+                  Skelly te ayuda a buscar, completar y copiar plantillas sin friccion tecnica.
                 </p>
                 <button
                   type="button"
@@ -282,16 +261,18 @@ export default function Header({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <span className="badge-soft">
-                <Import className="h-3.5 w-3.5 text-cyan" />
-                Excel y CSV para usuarios
-              </span>
-              <span className="badge-soft">Busqueda por atajos</span>
+              <span className="badge-soft">Editar atajos desde la plantilla</span>
+              <span className="badge-soft">Plantillas oficiales editables</span>
+              <span className="badge-soft">Antecedente guiado por defecto</span>
               <span className="badge-soft">Dictado en campos clave</span>
-              <span className="badge-soft">Sin exportacion por ahora</span>
+              <span className="badge-soft">Todo guardado en la nube</span>
             </div>
 
-            <HeroMascot missing={heroMissing} onMissing={() => setHeroMissing(true)} />
+            <SkellyDashboardMascota
+              introToken={skellyIntroToken}
+              userId={profile?.id || null}
+            />
+
           </div>
         </div>
       </div>

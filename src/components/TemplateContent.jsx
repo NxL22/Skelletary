@@ -1,16 +1,17 @@
 import { normalizeTemplateContentSpacing } from "../lib/reportFormatting";
+import { ensureRequiredTemplateVariables } from "../lib/variables";
 
 function isPlaceholder(part) {
   return /{{\s*[^}]+\s*}}/.test(part);
 }
 
 export default function TemplateContent({ text, compact = false }) {
-  const normalizedText = normalizeTemplateContentSpacing(text);
+  const normalizedText = normalizeTemplateContentSpacing(ensureRequiredTemplateVariables(text));
   const parts = normalizedText.split(/({{\s*[^}]+\s*}})/g);
 
   return (
     <pre
-      className={`whitespace-pre-wrap break-words font-body text-sm leading-6 text-slate-200 ${
+      className={`m-0 whitespace-pre-wrap break-words font-body text-sm leading-6 text-slate-200 ${
         compact ? "max-h-32 overflow-hidden text-[13px]" : ""
       }`}
     >

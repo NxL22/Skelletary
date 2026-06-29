@@ -4,8 +4,7 @@ import { normalizeTemplateContentSpacing } from "./reportFormatting";
 import { getSupabaseClient } from "./supabaseClient";
 import {
   createTemplateId,
-  duplicateTemplateRecord,
-  getTemplateDisplayShortcut,
+  getTemplateStoredShortcut,
   normalizeTemplate,
   normalizeTemplates,
   sanitizeTemplateText,
@@ -14,7 +13,7 @@ import {
 function toRemoteTemplatePayload(template, userId) {
   const title = sanitizeTemplateText(template.title.trim());
   const category = sanitizeTemplateText(template.category.trim());
-  const shortcut = getTemplateDisplayShortcut({
+  const shortcut = getTemplateStoredShortcut({
     ...template,
     title,
     category,
@@ -32,10 +31,6 @@ function toRemoteTemplatePayload(template, userId) {
     updated_at: template.updatedAt,
     source_type: template.sourceType || "manual",
   };
-}
-
-function createTemplateLookup(templates) {
-  return new Map(templates.map((template) => [template.id, template]));
 }
 
 function buildStatsLookup(statsRows = []) {
@@ -76,6 +71,10 @@ function normalizeUserTemplates(userRows = []) {
   }));
 }
 
+// Cuando el usuario edita una plantilla oficial, la app crea automaticamente
+// una entrada en user_templates con el mismo ID. En el merge, las plantillas
+// personales ganan sobre las oficiales con el mismo ID para que el usuario
+// vea sus cambios sin perder la version original para otros.
 function mergeRemoteData(coreRows = [], userRows = [], statsRows = [], hasCoreLibrary = true) {
   const statsLookup = buildStatsLookup(statsRows);
   const coreTemplates = hasCoreLibrary
@@ -85,7 +84,10 @@ function mergeRemoteData(coreRows = [], userRows = [], statsRows = [], hasCoreLi
     attachStats(template, "personal", statsLookup),
   );
 
-  return [...coreTemplates, ...userTemplates];
+  const personalIds = new Set(userTemplates.map((template) => template.id));
+  const filteredCoreTemplates = coreTemplates.filter((template) => !personalIds.has(template.id));
+
+  return [...filteredCoreTemplates, ...userTemplates];
 }
 
 export async function fetchRemoteWorkspace(userId) {
@@ -182,23 +184,14 @@ export async function deleteUserTemplateRemote(templateId) {
     throw new Error("Supabase no esta configurado.");
   }
 
+  // Solo borramos en user_templates. Si la plantilla es oficial y nunca fue
+  // editada, no habra fila ahi y la oficial seguira visible desde core_templates.
   const { error: templateError } = await supabase.from("user_templates").delete().eq("id", templateId);
   const { error: statsError } = await supabase.from("user_template_stats").delete().eq("template_id", templateId);
 
   if (templateError || statsError) {
     throw templateError || statsError;
   }
-}
-
-export async function duplicateToPersonalLibrary(userId, template) {
-  const duplicatedTemplate = {
-    ...duplicateTemplateRecord(template),
-    libraryOrigin: "personal",
-    isUserOwned: true,
-    sourceType: template.libraryOrigin === "core" ? "duplicated_from_core" : "manual",
-  };
-
-  return saveUserTemplateRemote(userId, duplicatedTemplate);
 }
 
 export async function upsertTemplateStatsRemote(userId, template, changes) {
@@ -214,7 +207,7 @@ export async function upsertTemplateStatsRemote(userId, template, changes) {
     template_origin: template.libraryOrigin === "personal" ? "personal" : "core",
     favorite: Boolean(changes.favorite ?? template.favorite),
     copy_count: Number(changes.copyCount ?? template.copyCount ?? 0),
-    last_copied_at: changes.lastCopiedAt ?? template.lastCopiedAt ?? null,
+    last_copied_at: (changes.lastCopiedAt ?? template.lastCopiedAt) || null,
     updated_at: new Date().toISOString(),
   };
 
@@ -225,75 +218,6 @@ export async function upsertTemplateStatsRemote(userId, template, changes) {
   }
 
   return payload;
-}
-
-export async function importUserTemplatesRemote({
-  userId,
-  fileName,
-  importKind,
-  rows,
-}) {
-  const supabase = getSupabaseClient();
-
-  if (!supabase) {
-    throw new Error("Supabase no esta configurado.");
-  }
-
-  const templatesToInsert = rows.map((row) =>
-    toRemoteTemplatePayload(
-      {
-        ...row,
-        id: row.id || createTemplateId(row.title),
-        createdAt: row.createdAt || new Date().toISOString(),
-        updatedAt: row.updatedAt || new Date().toISOString(),
-        sourceType: importKind,
-      },
-      userId,
-    ),
-  );
-
-  const { data: importJob, error: jobError } = await supabase
-    .from("import_jobs")
-    .insert({
-      user_id: userId,
-      kind: importKind,
-      status: "completed",
-      filename: fileName,
-      summary_json: {
-        imported: templatesToInsert.length,
-      },
-    })
-    .select("id")
-    .single();
-
-  if (jobError) {
-    throw jobError;
-  }
-
-  const importRowsPayload = templatesToInsert.map((template) => ({
-    import_job_id: importJob.id,
-    title: template.title,
-    category: template.category,
-    shortcut: template.shortcut,
-    content: template.content,
-    status: "imported",
-  }));
-
-  const [{ error: templatesError }, { error: rowsError }] = await Promise.all([
-    supabase.from("user_templates").upsert(templatesToInsert),
-    supabase.from("import_rows").insert(importRowsPayload),
-  ]);
-
-  if (templatesError || rowsError) {
-    throw templatesError || rowsError;
-  }
-
-  return normalizeTemplates(templatesToInsert).map((template) => ({
-    ...template,
-    libraryOrigin: "personal",
-    isUserOwned: true,
-    sourceType: importKind,
-  }));
 }
 
 export function extractLegacyPersonalTemplates(localTemplates = []) {
@@ -331,42 +255,45 @@ export function hasMeaningfulLegacyData(localTemplates = []) {
 
 export async function migrateLocalWorkspaceToRemote(userId, localTemplates = []) {
   const personalTemplates = extractLegacyPersonalTemplates(localTemplates);
-  const personalLookup = createTemplateLookup(personalTemplates);
   const statsRows = extractLegacyStats(localTemplates);
 
   if (personalTemplates.length) {
-    await importUserTemplatesRemote({
-      userId,
-      fileName: "migracion-local",
-      importKind: "manual",
-      rows: personalTemplates,
-    });
+    // Guardamos las plantillas personales en user_templates. Usamos el cliente
+    // de Supabase directamente aqui porque ya no existe importUserTemplatesRemote
+    // desde que se elimino la importacion masiva de la app.
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error("Supabase no esta configurado.");
+    }
+
+    const payload = personalTemplates.map((template) =>
+      toRemoteTemplatePayload(template, userId),
+    );
+
+    const { error: templatesError } = await supabase.from("user_templates").upsert(payload);
+
+    if (templatesError) {
+      throw templatesError;
+    }
   }
 
   await Promise.all(
-    statsRows.map((stat) => {
-      const template =
-        stat.template_origin === "personal"
-          ? personalLookup.get(stat.template_id) || {
-              id: stat.template_id,
-              libraryOrigin: "personal",
-              favorite: stat.favorite,
-              copyCount: stat.copy_count,
-              lastCopiedAt: stat.last_copied_at,
-            }
-          : {
-              id: stat.template_id,
-              libraryOrigin: "core",
-              favorite: stat.favorite,
-              copyCount: stat.copy_count,
-              lastCopiedAt: stat.last_copied_at,
-            };
-
-      return upsertTemplateStatsRemote(userId, template, {
-        favorite: stat.favorite,
-        copyCount: stat.copy_count,
-        lastCopiedAt: stat.last_copied_at,
-      });
-    }),
+    statsRows.map((stat) =>
+      upsertTemplateStatsRemote(
+        userId,
+        {
+          id: stat.template_id,
+          libraryOrigin: stat.template_origin,
+          favorite: stat.favorite,
+          copyCount: stat.copy_count,
+          lastCopiedAt: stat.last_copied_at,
+        },
+        {
+          favorite: stat.favorite,
+          copyCount: stat.copy_count,
+          lastCopiedAt: stat.last_copied_at,
+        },
+      ),
+    ),
   );
 }

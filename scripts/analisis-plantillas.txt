@@ -1,0 +1,221 @@
+Total de plantillas analizadas: 276
+
+=== DUPLICADOS POR TITULO ===
+- "Angio TAC De Tórax" -> IDs: angiotac-de-torax-angiotac, angiotac-de-torax-angiotac-2
+- "RX Hombro AP-outlet axial disyuncion acromiclav" -> IDs: rx-hombro-ap-outlet-axial-disyuncion-acromiclav-radiografia-normal, rx-hombro-ap-outlet-axial-disyuncion-acromiclav-radiografia-patologica
+- "Radiografía de Columna Total AP y Lateral en Bipedestación" -> IDs: radiografia-de-columna-total-ap-y-lateral-en-bipedestacion-radiografia-normal, radiografia-de-columna-total-ap-y-lateral-en-bipedestacion-radiografia-patologica
+- "Angio TAC Arterial Y Venoso De Extremidades Superiores" -> IDs: angio-tac-arterial-y-venoso-de-extremidades-superiores-angiotac, angio-tac-arterial-y-venoso-de-extremidades-superiores-angiotac-2
+- "Angio TAC tórax abdomen pelvis y EEII normal" -> IDs: angio-tac-torax-abdomen-pelvis-y-eeii-normal-angiotac, angio-tac-torax-abdomen-pelvis-y-eeii-normal-angiotac-2
+- "Uro TAC Normal" -> IDs: urotac-normal-urotac, urotac-normal-urotac-2
+- "Angio TAC EESS Operculo Toracico" -> IDs: angio-tac-eess-operculo-toracico-angiotac, angio-tac-eess-operculo-toracico-angiotac-2
+
+=== DUPLICADOS POR ATAJO ===
+- "dopplervaricesn" -> IDs: doppler-venoso-eeii-varices-normal-doppler-venoso-eeii, doppler-venoso-eeii-normal-doppler-venoso-eeii (Doppler Venoso EEII Várices - Normal) (Doppler Venoso EEII - Normal)
+- "ecohombro sebursitis" -> IDs: eco-hombro-tendinopatia-del-se-bursitis-ecografia-hombro, eco-hombro-tendinosis-bursitis-artrosis-ecografia-hombro (Eco hombro - Tendinopatía del SE - Bursitis) (Eco hombro - Tendinosis - Bursitis - Artrosis)
+
+=== PLANTILLAS SIN SECCION ANTECEDENTES ===
+- [doppler-venoso-eeii-varices-normal-doppler-venoso-eeii] Doppler Venoso EEII Várices - Normal
+- [doppler-fav-normal-doppler-fav] Doppler FAV - Normal
+- [eco-doppler-mapeo-fav-doppler-fav] Eco Doppler Mapeo FAV
+- [doppler-renal-transplantado-doppler-renal-trasplante] Doppler Renal Transplantado
+- [doppler-varices-eeii-esquema-ordenado-doppler-venoso-eeii] Doppler Várices EEII - Esquema ordenado
+- [doppler-venoso-eeii-insuficiencia-venosa-doppler-venoso-eeii] Doppler Venoso EEII - Insuficiencia Venosa
+- [lipoma-ecografia-mamaria] Lipoma
+- [adenomiomatosis-eco-abdo-ecografia-abdominal] adenomiomatosis eco abdo
+- [antebrazo-normal-ecografia-partes-blandas] antebrazo normal
+- [paredabdominal-ecografia-abdominal] pared abdominal
+- [eco-abdomen-esteatosis-colelitiasis-ecografia-abdominal] Eco abdomen - Esteatosis - Colelitiasis
+- [eco-caderas-normal-ecografia-inguinal] Eco Caderas - Normal
+- [eco-codo-epicondilitis-ecografia-codo] Eco Codo - Epicondilítis
+- [eco-codo-normal-ecografia-codo] Eco Codo - Normal
+- [eco-hombro-tendinosis-del-infraespinoso-ecografia-hombro] Eco Hombro - Tendinosis del Infraespinoso
+- [eco-hombro-pack-3-ecografia-hombro] Eco Hombro - Pack 3
+- [eco-hombro-pack-completo-ecografia-hombro] Eco Hombro - Pack Completo
+- [eco-general-examen-a-distancia-otros] Eco general - Examen a distancia.
+- [eco-pb-mallet-finger-ecografia-mano-y-dedos] Eco PB - Mallet Finger
+- [eco-pared-abdomina-diastasis-de-los-rectos-ecografia-abdominal] Eco Pared Abdomina - Diástasis de los rectos
+- [eco-pb-celulitis-ecografia-partes-blandas] Eco PB - Celulitis
+- [eco-partes-blandas-hematoma-ecografia-pie] Eco partes blandas - Hematoma
+- [eco-pie-entesopatia-aquiliana-ecografia-tendon-de-aquiles] Eco pie - Entesopatía Aquiliana
+- [eco-rodilla-quiste-de-baker-ecografia-rodilla] Eco Rodilla - Quiste de Baker
+- [eco-rodilla-derrame-articular-ecografia-rodilla] Eco Rodilla - Derrame articular
+- [eco-rodilla-unilateral-entesopatia-cuadricipital-extrusion-meniscal-ecografia-rodilla] Eco Rodilla Unilateral - Entesopatía Cuadricipital - Extrusión Meniscal
+- [eco-rodilla-normal-ecografia-rodilla] Eco Rodilla - Normal
+- [eco-testicular-testiculo-en-ascensor-ecografia-testicular] Eco Testicular - Testículo en ascensor
+- [eco-testicular-sospecha-neo-1-ecografia-testicular] Eco Testicular - Sospecha Neo 1°
+- [eco-tobillo-esguince-grado-1-tenosinovitis-del-tibial-posterior-ecografia-mano-y-dedos] Eco Tobillo Esguince Grado 1 - Tenosinovitis del tibial posterior.
+- [eco-tobillo-esguince-grado-i-ecografia-mano-y-dedos] Eco Tobillo - Esguince Grado I
+- [cambios-entesopaticos-cadera-ecografia-cadera] Cambios Entesopáticos Cadera
+- [cambios-entesopaticos-pie-ecografia-tendon-de-aquiles] Cambios Entesopáticos Pie
+- [fibromatosis-plantar-ecografia-pie] fibromatosis plantar
+- [pelvis-fem-adulto-ecografia-pelvis-femenina] pelvis fem adulto
+- [tendinopatia-biceps-supra-y-bursitis-ecografia-hombro] tendinopatia biceps supra y bursitis.
+- [partes-blandas-ecografia-partes-blandas] partes blandas
+- [hombro-ecografia-hombro] hombro
+- [hombro-tendinosis-se-bursa-sasd-ecografia-hombro] HOMBRO tendinosis SE bursa SASD
+- [colelitiasis-esteatosis-ecografia-abdominal] colelitiasis esteatosis
+
+=== ANTECEDENTES QUE NO SON SOLO LA VARIABLE ===
+- [doppler-arterial-de-eess-normal-doppler-arterial-eess] Doppler Arterial de EESS - Normal: "El sistema arterial se examinó en forma continua desde el territorio subclavio al territorio distal a nivel de la muñeca, registrándose imágenes representativas de los diferentes segmentos."
+- [hemangioma-hepatico-ecografia-abdominal] hemangioma hepatico: "Sin antecedentes en orden médica."
+- [rm-de-pelvis-utero-resonancia-magnetica] RM de pelvis UTERO: "{{antecedente}} | RM de pelvis: | Antecedente clínico: Obs. Útero bicorne."
+- [rm-pelvis-sin-endometriosis-resonancia-magnetica] RM Pelvis sin ENDOMETRIOSIS: "{{antecedente}} | Hallazgos: El útero se encuentra en anteversión presentando forma y tamaño normal, con anatomía zonal respetada. Se identifica normal grosor y señal tanto del endometrio como de la zona de unión endometrio-miometrial. El cuello uterino no presenta alteraciones tomográficas. | Ovarios de morfología normal para la edad de la paciente, observando cuerpo lúteo a derecha. No se identifican lesiones quísticas hemorrágicas en los ovarios. | FórnicesFórnices vaginales y regiones parametriales de morfología conservada. En especial no se identifican masas adherenciales fibróticas en estas regiones. | Secuencias ponderadas en T1 con saturación grasa no demuestran focos o implantes hemorrágicos peritoneales pélvicos. | Vejiga de morfología normal, sin áreas de engrosamiento parietal. | No se identifican adenopatías ilíacas externas ni inguinales. | Existe una pequeña cantidad de líquido libre fisiológico el fondo de saco de Douglas. | Fosas isquiorrectales libres. | Impresión diagnóstica: Examen sin hallazgos de significado patológico actual."
+- [torax-portatil-radiografia] Tórax portátil: "{{antecedente}} | RADIOGRAFÍA DE TÓRAX PORTÁTIL AP"
+- [radiografia-de-huesos-propios-de-la-nariz-radiografia] Radiografía De Huesos Propios De La Nariz: "{{antecedente}} | No se observan evidencias de una fractura de los huesos propios de la nariz. | Tabique nasal bien alineado. | Espina nasal anterior sin evidencias de fractura. | Cavidades perinatales visibles, bien neumatizadas. | Resto sin alteraciones."
+- [rx-abdomen-neumoperitoneo-radiografia] RX abdomen neumoperitoneo: "{{antecedente}} | RADIOGRAFÍA DE ABDOMEN SIMPLE AP (DE PIE Y DECÚBITO) | Antecedente clínico: Dolor abdominal en estudio."
+- [rx-abdomen-simple-radiografia] RX abdomen simple: "{{antecedente}} | Radiografía de abdomen simple portátil (en decúbito) | 20:10 horas."
+- [tac-cerebro-am-angiotac] TAC cerebro AM: "{{antecedente}} | TOMOGRAFIA COMPUTADA DE CRANEO Y CEREBRO: | Examen realizado con cortes axiales de base a vértex, antes y después de la inyección de contraste yodado endovenoso."
+- [tac-cerebro-con-angiotac] TAC cerebro CON: "{{antecedente}} | TOMOGRAFÍA COMPUTADA DE CEREBRO"
+- [tac-cerebro-fp-oidos-angiotac] TAC cerebro FP oídos: "{{antecedente}} | TOMOGRAFÍA COMPUTADA DE FOSA POSTERIOR Y OIDOS"
+- [ambas-manos-ap-oblicuas-radiografia-normal] Ambas Manos AP-Oblicuas: "{{antecedente}} | RADIOGRAFÍA DE AMBAS MANOS AP Y OBLICUAS:"
+- [rx-hombro-ap-v-ri-re-ou-ax-radiografia-normal] RX Hombro AP V-RI-RE-OU-AX: "{{antecedente}} | Radiografía de Hombro AP verdadera, rotación interna, rotación externa, outlet y axial: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacio articular gleno humeral de amplitud normal, márgenes regulares, bien alineado. | No se observan calcificaciones intra ni periarticulares. | Distancia acromio-humeral normal. | Articulación acromio-clavicular sin alteraciones."
+- [rx-ambos-pies-ap-oblicuos-radiografia-normal] RX ambos Pies AP-Oblicuos: "{{antecedente}} | Radiografía de ambos Pies AP y Oblicuos: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares de amplitud normal, márgenes regulares, sin evidencias de erosiones o proliferación ósea. | No se observan calcificaciones intra ni periarticulares. | Alineación tarsometatarsiana conservada. | Partes blandas sin alteraciones evidentes."
+- [ambos-pies-ap-oblicuos-radiografia-normal] Ambos Pies AP-Oblicuos: "{{antecedente}} | RADIOGRAFÍA DE AMBOS PIES AP Y OBLICUOS:"
+- [rx-pelvis-ap-cadera-ap-radiografia-normal] RX Pelvis AP-Cadera AP: "{{antecedente}} | Radiografía de Pelvis AP y Cadera AP – Axial Verdadera: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares coxofemorales de amplitud normal y márgenes regulares. | Articulaciones sacroilíacas y sínfisis del pubis sin alteraciones. | No se observan calcificaciones intra ni periarticulares. | Líneas arcuatas sacras simétricas, conservadas."
+- [rx-columna-total-ap-l-bipedestacion-radiografia-normal] RX Columna Total AP-L Bipedestación: "{{antecedente}} | Radiografía de Columna Total AP y Lateral en Bipedestación: | No se observa desnivel pelviano significativo. | Alineación vertebral conservada. | No hay evidencias de una lesión ósea traumática ni destructiva. | Espacios intervertebrales de amplitud normal. | Articulaciones interapofisiarias visibles, sin alteraciones. | No hay evidencias de listesis."
+- [rx-columna-lumbar-ap-l-di-5-grados-radiografia-normal] RX Columna Lumbar AP-L-DI-5°: "{{antecedente}} | Radiografía de Columna Lumbar AP- Lateral - 5to espacio focalizado - Dinámicas: | Alineación vertebral normal. | No hay signos de una lesión ósea traumática o destructiva. | Pedículos vertebrales sin alteraciones. | Espacios intervertebrales de amplitud normal. | Articulaciones interapofisiarias sin alteraciones. | No hay evidencias de listesis."
+- [rx-hombro-ap-ri-re-ax-radiografia-normal] RX Hombro AP-RI-RE-AX: "{{antecedente}} | Radiografía de Hombro AP rotación interna, rotación externa y axial: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacio articular gleno humeral de amplitud normal, márgenes regulares, bien alineado. | No se observan calcificaciones intra ni periarticulares. | Distancia acromio-humeral normal. | Articulación acromio-clavicular sin alteraciones."
+- [rx-pelvis-bb-radiografia-normal] RX Pelvis-BB: "{{antecedente}} | Radiografía de Pelvis (AP): | Ambas caderas son de caracteres radiológicos normales y en especial, no presentan evidencias de displasia. | No hay signos de una lesión ósea. | No hay alteraciones en las partes blandas."
+- [rx-pie-ap-oblicuo-radiografia-normal] RX Pie AP-Oblicuo: "{{antecedente}} | Radiografía de Pie AP y Oblicuo: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares de amplitud normal, márgenes regulares, sin evidencias de erosiones o proliferación ósea. | No se observan calcificaciones intra ni periarticulares. | Alineación tarsometatarsiana conservada. | Partes blandas sin alteraciones evidentes."
+- [rx-rodilla-ap-lateral-radiografia-normal] RX Rodilla AP-Lateral: "{{antecedente}} | Radiografía de Rodilla AP y Lateral: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares fémoro tibiales de amplitud normal. | No se observan calcificaciones intra ni periarticulares. | No hay signos de derrame articular."
+- [rx-codo-ap-y-lateral-radiografia-normal] RX Codo AP y Lateral: "{{antecedente}} | Radiografía de Codo AP y Lateral: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares de amplitud normal. | No se observan calcificaciones intra ni periarticulares. | No hay signos de derrame articular."
+- [radiografia-sacroilicacas-ap-y-ap-angulada-radiografia-normal] Radiografía Sacroilíacas AP y AP angulada: "{{antecedente}} | Radiografía de articulaciones sacroilíacas AP - AP angulada"
+- [rx-columna-cervical-transoral-radiografia-normal] RX Columna Cervical transoral: "{{antecedente}} | RADIOGRAFÍA DE COLUMNA CERVICAL (AP, LATERAL Y TRANSORAL):"
+- [rx-hombro-trauma-radiografia-normal] RX Hombro Trauma: "{{antecedente}} | Radiografía de Hombro AP verdadera, axial y outlet: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacio articular gleno humeral de amplitud normal, márgenes regulares, bien alineado. | No se observan calcificaciones intra ni periarticulares. | Distancia acromio-humeral normal. | Articulación acromio-clavicular sin alteraciones."
+- [ambas-rodillas-ap-lateral-radiografia-normal] Ambas Rodillas AP-Lateral: "{{antecedente}} | RADIOGRAFÍA DE AMBAS RODILLAS AP Y LATERAL:"
+- [rx-pelvis-ap-radiografia-normal] RX Pelvis AP: "{{antecedente}} | Radiografía de Pelvis AP: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares coxofemorales de amplitud normal y márgenes regulares. | Articulaciones sacroilíacas y sínfisis del pubis sin alteraciones. | No se observan calcificaciones intra ni periarticulares. | Líneas arcuatas sacras simétricas, conservadas."
+- [rx-hombro-ap-outlet-axial-disyuncion-acromiclav-radiografia-normal] RX Hombro AP-outlet axial disyuncion acromiclav: "{{antecedente}} | Radiografía de hombro AP verdadera, outlet y axial"
+- [rx-ambas-rodillas-ap-lateral-radiografia-normal] RX Ambas Rodillas AP-Lateral: "{{antecedente}} | Radiografía de Ambas Rodillas AP y Lateral: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares fémoro tibiales de amplitud normal. | No se observan calcificaciones intra ni periarticulares. | No hay signos de derrame articular."
+- [rx-craneo-ap-y-lateral-radiografia-normal] RX Cráneo AP y Lateral: "{{antecedente}} | Radiografía de Cráneo AP y Lateral: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | No se observan calcificaciones intracraneanas patológicas. | Silla turca de volumen y configuración normales. | Cavidades perinasales sin alteraciones evidentes."
+- [rx-rodilla-ap-l-ax-radiografia-normal] RX Rodilla AP-L-AX: "{{antecedente}} | Radiografía de Rodilla AP, Lateral y Axial: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares fémoro tibiales de amplitud normal. | No se observan calcificaciones intra ni periarticulares. | No hay signos de derrame articular. | Alineamiento rotuliano conservado."
+- [r-cavidades-perinasales-radiografia-normal] R Cavidades Perinasales: "{{antecedente}} | RADIOGRAFÍA DE CAVIDADES PERINASALES (CADWELL Y WATERS) | Antecedente clínico: Rinosinusitis alérgica."
+- [rx-mano-ap-oblicua-radiografia-normal] RX Mano AP-Oblicua: "{{antecedente}} | Radiografía de Mano AP y Oblicua: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares de amplitud normal, márgenes regulares, sin evidencias de erosiones o proliferación ósea. | No se observan calcificaciones intra ni periarticulares. | Partes blandas sin alteraciones evidentes."
+- [rx-muneca-ap-lateral-radiografia-normal] RX Muñeca AP-Lateral: "{{antecedente}} | Radiografía de Muñeca AP y Lateral: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares de amplitud normal. | Alineación ósea normal. | Partes blandas sin alteraciones evidentes. | No se observan calcificaciones intra ni periarticulares."
+- [rx-ambas-manos-ap-oblicuas-radiografia-normal] RX ambas Manos AP-Oblicuas: "{{antecedente}} | Radiografía de ambas Manos AP y Oblicuas: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares de amplitud normal, márgenes regulares, sin evidencias de erosiones o proliferación ósea. | No se observan calcificaciones intra ni periarticulares. | Partes blandas sin alteraciones evidentes."
+- [rx-parrilla-costal-ap-oblicua-radiografia-normal] RX Parrilla Costal AP-Oblicua: "{{antecedente}} | Radiografía de Parrilla Costal AP y Oblicua: | Estructura ósea conservada. | No hay evidencias de una lesión costal traumática o destructiva. | Partes blandas sin alteraciones evidentes."
+- [rx-dedo-ap-l-o-radiografia-normal] RX Dedo AP-L-O: "{{antecedente}} | Radiografía de Dedo AP, Lateral y Oblicuo: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares de amplitud normal. | Partes blandas sin alteraciones evidentes."
+- [radiografia-de-columna-cervical-a-l-dinamicas-flexoexten-radiografia-normal] Radiografía de columna cervical A-L-dinamicas flexoexten: "{{antecedente}} | Radiografía de columna cervical AP - Lateral - Dinámicas en flexoextensión. | Estructura ósea conservada. | No hay signos de una lesión ósea traumática. | Cuerpos vertebrales cervicales de altura y morfología normal. | Espacios intervertebrales de amplitud normal. | Articulaciones interapofisarias sin alteraciones. | No hay signos de listesis. | Con maniobras dinámicas no se observan desplazamientos patológicos de cuerpos vertebrales. | Intervalo atlantoaxial anterior de amplitud normal. | Partes blandas prevertebrales de grosor normal."
+- [rx-tobillo-ap-l-ob-radiografia-normal] RX Tobillo AP-L-OB: "{{antecedente}} | Radiografía de Tobillo AP, Lateral y Oblicuo: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacio articular tibio-peroneo-astragalino de amplitud normal. | No hay signos de derrame articular. | No se observan calcificaciones intra ni periarticulares. | La sombra del tendón de Aquiles es de grosor normal y presenta un borde anterior bien definido. | Partes blandas sin alteraciones evidentes."
+- [rx-columna-cervical-ap-l-ob-radiografia-normal] RX Columna Cervical AP-L-OB: "{{antecedente}} | Radiografía de Columna Cervical Ap, Lateral y Oblicuas: | Alineación vertebral normal. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios intervertebrales de amplitud normal. | Articulaciones uncovertebrales e interapofisiarias sin alteraciones. | Intervalo atlanto axial anterior de amplitud normal. | Neuroforámenes de amplitud normal. | Partes blandas prevertebrales de grosor normal."
+- [radiografia-de-columna-total-ap-y-lateral-en-bipedestacion-radiografia-normal] Radiografía de Columna Total AP y Lateral en Bipedestación: "{{antecedente}} | Radiografía de Columna Total AP y Lateral en Bipedestación: | No se observa desnivel pelviano significativo. | Discreta incurvación dorsolumbar izquierda. | Alineación sagital normal. | Se observan doce pares de costillas y cinco vértebras de tipo lumbar. | No hay evidencias de una lesión ósea traumática ni destructiva. | Espacios intervertebrales de amplitud normal. | Articulaciones interapofisiarias visibles, sin alteraciones. | No hay evidencias de listesis. | Clips quirúrgicos en hipocondrio derecho."
+- [rx-columna-lumbar-ap-l-5-grados-radiografia-normal] RX Columna Lumbar AP-L-5°: "{{antecedente}} | Radiografía de Columna Lumbar AP, Lateral y 5to espacio focalizado: | Alineación vertebral normal. | No hay signos de una lesión ósea traumática o destructiva. | Pedículos vertebrales sin alteraciones. | Espacios intervertebrales de amplitud normal. | Articulaciones interapofisiarias sin alteraciones. | No hay evidencias de listesis."
+- [rx-coccix-radiografia-normal] RX Coccix: "{{antecedente}} | Radiografía de sacro coxis AP - Lateral: | Osteopenia difusa. | No hay signos de una lesión ósea traumática o destructiva. | Signos de artrosis sacroilíaca derecha. | Articulación sacroilíaca izquierda de amplitud normal. | Leves cambios degenerativos de sínfisis del pubis. | Proliferación ósea entesopática en tuberosidades isquiáticas. | Radiografía de columna sacrococcígea AP - Lateral | Osteopenia difusa. | No hay signos de una lesión ósea. | Alineación sacrococcígea conservada. | Líneas arcuatas sacras de morfología normal, simétricas. | Megapófisis transversa L5 bilateral que seudo articulan con el sacro con leves cambios degenerativos a estos niveles. | Signos de artrosis sacroilíaca bilateral. | Cambios degenerativos leves en sínfisis del pubis. | Partes blandas sin alteraciones significativas."
+- [rx-columna-lumbar-ap-l-5-grados-ob-radiografia-normal] RX Columna Lumbar AP-L-5°-OB: "{{antecedente}} | Radiografía de Columna Lumbar AP - Lateral - 5to espacio focalizado – Oblicuas : | Alineación vertebral normal. | No hay signos de una lesión ósea traumática o destructiva. | Pedículos vertebrales sin alteraciones. | Espacios intervertebrales de amplitud normal. | Articulaciones interapofisiarias sin alteraciones. | No hay signos de espondilolisis ni espondilolistesis."
+- [rx-antebrazo-ap-lat-radiografia-normal] RX Antebrazo AP-Lat: "{{antecedente}} | Radiografía de Antebrazo AP y Lateral: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares visibles de amplitud normal. | Partes blandas sin alteraciones evidentes."
+- [rx-columna-lumbar-ap-l-ob-di-5-grados-radiografia-normal] RX Columna Lumbar AP-L-OB-DI-5°: "{{antecedente}} | Radiografía de Columna Lumbar AP - Lateral - 5to espacio focalizado – Oblicuas - Dinámicas: | Alineación vertebral normal. | No hay signos de una lesión ósea traumática o destructiva. | Pedículos vertebrales sin alteraciones. | Espacios intervertebrales de amplitud normal. | Articulaciones interapofisiarias sin alteraciones. | No hay signos de espondilolisis ni espondilolistesis."
+- [rx-de-calcaneo-lateral-y-oblicua-radiografia-normal] RX de Calcáneo lateral y oblicua: "{{antecedente}} | Radiografía de Calcáneo lateral y oblicua: | Estructura ósea conservada. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios articulares visibles de amplitud normal. | Partes blandas sin alteraciones evidentes."
+- [rx-columna-cervical-ap-y-lateral-radiografia-normal] RX Columna Cervical AP y Lateral: "{{antecedente}} | Radiografía de Columna Cervical AP y Lateral: | Alineación vertebral normal. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios intervertebrales de amplitud normal. | Articulaciones uncovertebrales e interapofisiarias sin alteraciones. | Intervalo atlanto axial anterior de amplitud normal. | Partes blandas prevertebrales de grosor normal."
+- [rxcolumna-cervical-ap-l-t-radiografia-normal] RX Columna Cervical AP-L-T: "{{antecedente}} | Radiografía de Columna Cervical AP, Lateral y Transoral: | Alineación vertebral normal. | No hay evidencias de una lesión ósea traumática o destructiva. | Espacios intervertebrales de amplitud normal. | Articulaciones uncovertebrales e interapofisiarias sin alteraciones. | Intervalo atlanto axial anterior de amplitud normal. | Alineación C1-C2 normal. | Partes blandas prevertebrales de grosor normal."
+- [rx-fx-coccix-radiografia-patologica] RX Fx coccix: "{{antecedente}} | Radiografía de columna sacrococcígea AP - AP angulada - Lateral | Estructura ósea normal. | Se observa fractura completa de disposición oblicua del tercio distal del quinto segmento sacro con leve desplazamiento anterior del segmento óseo distal. | Alineación sacrococcígea conservada. | Líneas arcuatas sacras visibles de morfología normal, simétricas. | Leve artrosis sacroilíaca bilateral. | Radiografía de columna sacrococcígea | Antecedente clínico: Contusión sacra."
+- [otros-radiografia-patologica] Otros: "{{antecedente}} | Calcificaciones vasculares en los trayectos vasculares femoral superficial y popliteo."
+- [rx-fx-humero-con-protesis-radiografia-patologica] RX fx humero con protesis: "{{antecedente}} | RADIOGRAFÍA DE HOMBRO IZQUIERDO AP - VELPEAU - OUTLET"
+- [lumbar-todo-un-poco-radiografia-patologica] Lumbar todo un poco: "{{antecedente}} | Radiografía de columna lumbar AP - Lateral y focalizada 5ª espacio"
+- [fx-muneca-fijada-radiografia-patologica] Fx muñeca fijada: "{{antecedente}} | RADIOGRAFÍA DE MUÑECA DERECHA AP - LATERAL"
+- [rx-braquimetatarsiano-op-radiografia-patologica] RX braquimetatarsiano op: "{{antecedente}} | RADIOGRAFÍA DE AMBOS PIES AP - LATERAL - OBLICUA | Antecedente clínico: Braquimetatarsiano cuarto ortejo bilateral."
+- [rx-hombro-ap-outlet-axial-disyuncion-acromiclav-radiografia-patologica] RX Hombro AP-outlet axial disyuncion acromiclav: "{{antecedente}} | Radiografía de hombro AP verdadera, outlet y axial"
+- [rx-columna-total-artrodesis-total-radiografia-patologica] RX columna total artrodesis total: "{{antecedente}} | RADIOGRAFÍA COLUMNA TOTAL AP - LATERAL DE PIE EN FOLIO GRADUADO. | Antecedente clínico: Cifoescoliosis operada."
+- [fx-clavicula-radiografia-patologica] Fx clavicula: "{{antecedente}} | Radiografía de clavícula izquierda AP - AP angulada. | Fractura de tercio medio de clavícula izquierda, con angulación craneal del segmento fracturario proximal y presencia de fragmento fracturario intersegmentario de disposición oblicua. | Aumento de volumen de partes blandas adyacentes a foco de fractura. | Articulación acromioclavicular izquierda de amplitud normal, bien alineada."
+- [rx-luxofractura-tobillo-radiografia-patologica] RX luxofractura tobillo: "{{antecedente}} | RADIOGRAFÍA DE TOBILLO IZQUIERDO AP - LATERAL - OBLICUA"
+- [fx-subcondral-astragalo-radiografia-patologica] Fx subcondral astragalo: "{{antecedente}} | RADIOGRAFÍA DE TOBILLO IZQUIERDO AP - LATERAL – OBLICUA CON CARGA."
+- [fx-perone-suprasindesmal-con-placa-radiografia-patologica] Fx perone suprasindesmal con placa: "{{antecedente}} | Radiografía de tobillo AP - Lateral - Oblicua"
+- [radiografia-de-columna-total-ap-y-lateral-en-bipedestacion-radiografia-patologica] Radiografía de Columna Total AP y Lateral en Bipedestación: "{{antecedente}} | Radiografía de Columna Total AP y Lateral en Bipedestación: | Antecedente clínico: Escoliosis degenerativa."
+- [fx-escafoides-radiografia-patologica] Fx escafoides: "{{antecedente}} | Radiografía de escafoides derecho (4 proyecciones) | Antecedente clínico: Fractura muñeca versus escafoide."
+- [fx-de-tobillo-weber-b-radiografia-patologica] Fx de tobillo Weber B: "{{antecedente}} | Radiografía de tobillo derecho AP - Lateral - Oblicua | Antecedente clínico: Esguince tobillo."
+- [fx-muneca-post-qx-agujas-k-radiografia-patologica] Fx muneca post qx agujas K: "{{antecedente}} | RADIOGRAFÍA DE MUÑECA DERECHA AP - LATERAL"
+- [fx-intertrocanterica-con-dhs-radiografia-patologica] Fx intertrocanterica con DHS: "{{antecedente}} | RADIOGRAFÍA DE PELVIS AP Y DE CADERA IZQUIERDA AP - AXIAL. | Antecedente clínico: Fractura de cadera izquierda."
+- [fx-de-tobillo-perone-radiografia-patologica] Fx de tobillo perone: "{{antecedente}} | Radiografía de TOBILLO derechO AP - Lateral - Oblicua"
+- [angio-tac-arterial-y-venoso-de-extremidades-superiores-angiotac] Angio TAC Arterial Y Venoso De Extremidades Superiores: "{{antecedente}} | ¿Síndrome del opérculo torácico?"
+- [angio-tac-de-eeii-displasia-fibromuscular-y-estenosis-art-tibial-posterior-angiotac] Angio TAC de EEII displasia fibromuscular y estenosis art tibial posterior: "{{antecedente}} | Angio TAC de extremidades"
+- [angio-tac-arterial-y-venoso-de-extremidades-superiores-normal-angiotac] Angio TAC Arterial y venoso de extremidades superiores normal: "{{antecedente}} | 1°"
+- [enteroclisis-x-tac-tac] Enteroclisis X TAC: "{{antecedente}} | ENTEROCLISIS POR TOMOGRAFÍA COMPUTADA"
+- [tac-cervical-absceso-odontoideo-tac] TAC Cervical Absceso Odontoideo: "{{antecedente}} | TC DE CUELLO | Antecedentes clínicos. Aumento de volumen submandibular izquierdo."
+- [angio-tac-eess-operculo-toracico-angiotac] Angio TAC EESS Operculo Toracico: "{{antecedente}} | ¿Síndrome del opérculo torácico?"
+- [angio-tac-abdomen-y-pelvis-aneurisma-fusiforme-ao-abd-infrarrenal-angiotac] Angio TAC abdomen y pelvis aneurisma fusiforme Ao Abd infrarrenal: "{{antecedente}} | 1°"
+- [angio-tac-abdomen-solo-vasos-angiotac] Angio TAC abdomen solo vasos: "{{antecedente}} | ANGIO TAC DE ABDOMEN - PELVIS | Aorta abdominal de calibre normal, permeable, con acentuada tortuosidad y ateromatosis cálcica aorto bi-ilíaca. | Tronco celíaco con ateromatosis cálcica en su origen, sin estenosis significativa, con adecuada permeabilidad distal. | Aorta mesentérica superior permeable, al igual que sus ramas viscerales. | Ateromatosis cálcica en el origen de ambas arterias renales (únicas), que no determina estenosis significativa. Arteria mesentérica inferior permeable. | Arterias ilíacas comunes, internas y externas permeables, de calibre normal."
+- [angio-tac-de-abd-y-pelvis-clau-angiotac] Angio TAC De Abd Y Pelvis Clau: "{{antecedente}} | Aneurisma de aorta abdominal."
+- [tac-cerebro-fp-oidos-1-angiotac] TAC cerebro FP oídos (1): "{{antecedente}} | TOMOGRAFÍA COMPUTADA DE FOSA POSTERIOR Y OIDOS"
+- [angio-tac-arterial-y-venoso-de-extremidades-superiores-angiotac-2] Angio TAC Arterial Y Venoso De Extremidades Superiores: "{{antecedente}} | ¿Síndrome del opérculo torácico?"
+- [angio-tac-eess-operculo-toracico-angiotac-2] Angio TAC EESS Operculo Toracico: "{{antecedente}} | ¿Síndrome del opérculo torácico?"
+
+=== NORMALIZACION ===
+Total de plantillas normalizadas: 80
+- [doppler-arterial-de-eess-normal-doppler-arterial-eess] Doppler Arterial de EESS - Normal
+- [hemangioma-hepatico-ecografia-abdominal] hemangioma hepatico
+- [rm-de-pelvis-utero-resonancia-magnetica] RM de pelvis UTERO
+- [rm-pelvis-sin-endometriosis-resonancia-magnetica] RM Pelvis sin ENDOMETRIOSIS
+- [torax-portatil-radiografia] Tórax portátil
+- [radiografia-de-huesos-propios-de-la-nariz-radiografia] Radiografía De Huesos Propios De La Nariz
+- [rx-abdomen-neumoperitoneo-radiografia] RX abdomen neumoperitoneo
+- [rx-abdomen-simple-radiografia] RX abdomen simple
+- [tac-cerebro-am-angiotac] TAC cerebro AM
+- [tac-cerebro-con-angiotac] TAC cerebro CON
+- [tac-cerebro-fp-oidos-angiotac] TAC cerebro FP oídos
+- [ambas-manos-ap-oblicuas-radiografia-normal] Ambas Manos AP-Oblicuas
+- [rx-hombro-ap-v-ri-re-ou-ax-radiografia-normal] RX Hombro AP V-RI-RE-OU-AX
+- [rx-ambos-pies-ap-oblicuos-radiografia-normal] RX ambos Pies AP-Oblicuos
+- [ambos-pies-ap-oblicuos-radiografia-normal] Ambos Pies AP-Oblicuos
+- [rx-pelvis-ap-cadera-ap-radiografia-normal] RX Pelvis AP-Cadera AP
+- [rx-columna-total-ap-l-bipedestacion-radiografia-normal] RX Columna Total AP-L Bipedestación
+- [rx-columna-lumbar-ap-l-di-5-grados-radiografia-normal] RX Columna Lumbar AP-L-DI-5°
+- [rx-hombro-ap-ri-re-ax-radiografia-normal] RX Hombro AP-RI-RE-AX
+- [rx-pelvis-bb-radiografia-normal] RX Pelvis-BB
+- [rx-pie-ap-oblicuo-radiografia-normal] RX Pie AP-Oblicuo
+- [rx-rodilla-ap-lateral-radiografia-normal] RX Rodilla AP-Lateral
+- [rx-codo-ap-y-lateral-radiografia-normal] RX Codo AP y Lateral
+- [radiografia-sacroilicacas-ap-y-ap-angulada-radiografia-normal] Radiografía Sacroilíacas AP y AP angulada
+- [rx-columna-cervical-transoral-radiografia-normal] RX Columna Cervical transoral
+- [rx-hombro-trauma-radiografia-normal] RX Hombro Trauma
+- [ambas-rodillas-ap-lateral-radiografia-normal] Ambas Rodillas AP-Lateral
+- [rx-pelvis-ap-radiografia-normal] RX Pelvis AP
+- [rx-hombro-ap-outlet-axial-disyuncion-acromiclav-radiografia-normal] RX Hombro AP-outlet axial disyuncion acromiclav
+- [rx-ambas-rodillas-ap-lateral-radiografia-normal] RX Ambas Rodillas AP-Lateral
+- [rx-craneo-ap-y-lateral-radiografia-normal] RX Cráneo AP y Lateral
+- [rx-rodilla-ap-l-ax-radiografia-normal] RX Rodilla AP-L-AX
+- [r-cavidades-perinasales-radiografia-normal] R Cavidades Perinasales
+- [rx-mano-ap-oblicua-radiografia-normal] RX Mano AP-Oblicua
+- [rx-muneca-ap-lateral-radiografia-normal] RX Muñeca AP-Lateral
+- [rx-ambas-manos-ap-oblicuas-radiografia-normal] RX ambas Manos AP-Oblicuas
+- [rx-parrilla-costal-ap-oblicua-radiografia-normal] RX Parrilla Costal AP-Oblicua
+- [rx-dedo-ap-l-o-radiografia-normal] RX Dedo AP-L-O
+- [radiografia-de-columna-cervical-a-l-dinamicas-flexoexten-radiografia-normal] Radiografía de columna cervical A-L-dinamicas flexoexten
+- [rx-tobillo-ap-l-ob-radiografia-normal] RX Tobillo AP-L-OB
+- [rx-columna-cervical-ap-l-ob-radiografia-normal] RX Columna Cervical AP-L-OB
+- [radiografia-de-columna-total-ap-y-lateral-en-bipedestacion-radiografia-normal] Radiografía de Columna Total AP y Lateral en Bipedestación
+- [rx-columna-lumbar-ap-l-5-grados-radiografia-normal] RX Columna Lumbar AP-L-5°
+- [rx-coccix-radiografia-normal] RX Coccix
+- [rx-columna-lumbar-ap-l-5-grados-ob-radiografia-normal] RX Columna Lumbar AP-L-5°-OB
+- [rx-antebrazo-ap-lat-radiografia-normal] RX Antebrazo AP-Lat
+- [rx-columna-lumbar-ap-l-ob-di-5-grados-radiografia-normal] RX Columna Lumbar AP-L-OB-DI-5°
+- [rx-de-calcaneo-lateral-y-oblicua-radiografia-normal] RX de Calcáneo lateral y oblicua
+- [rx-columna-cervical-ap-y-lateral-radiografia-normal] RX Columna Cervical AP y Lateral
+- [rxcolumna-cervical-ap-l-t-radiografia-normal] RX Columna Cervical AP-L-T
+- [rx-fx-coccix-radiografia-patologica] RX Fx coccix
+- [otros-radiografia-patologica] Otros
+- [rx-fx-humero-con-protesis-radiografia-patologica] RX fx humero con protesis
+- [lumbar-todo-un-poco-radiografia-patologica] Lumbar todo un poco
+- [fx-muneca-fijada-radiografia-patologica] Fx muñeca fijada
+- [rx-braquimetatarsiano-op-radiografia-patologica] RX braquimetatarsiano op
+- [rx-hombro-ap-outlet-axial-disyuncion-acromiclav-radiografia-patologica] RX Hombro AP-outlet axial disyuncion acromiclav
+- [rx-columna-total-artrodesis-total-radiografia-patologica] RX columna total artrodesis total
+- [fx-clavicula-radiografia-patologica] Fx clavicula
+- [rx-luxofractura-tobillo-radiografia-patologica] RX luxofractura tobillo
+- [fx-subcondral-astragalo-radiografia-patologica] Fx subcondral astragalo
+- [fx-perone-suprasindesmal-con-placa-radiografia-patologica] Fx perone suprasindesmal con placa
+- [radiografia-de-columna-total-ap-y-lateral-en-bipedestacion-radiografia-patologica] Radiografía de Columna Total AP y Lateral en Bipedestación
+- [fx-escafoides-radiografia-patologica] Fx escafoides
+- [fx-de-tobillo-weber-b-radiografia-patologica] Fx de tobillo Weber B
+- [fx-muneca-post-qx-agujas-k-radiografia-patologica] Fx muneca post qx agujas K
+- [fx-intertrocanterica-con-dhs-radiografia-patologica] Fx intertrocanterica con DHS
+- [fx-de-tobillo-perone-radiografia-patologica] Fx de tobillo perone
+- [angio-tac-arterial-y-venoso-de-extremidades-superiores-angiotac] Angio TAC Arterial Y Venoso De Extremidades Superiores
+- [angio-tac-de-eeii-displasia-fibromuscular-y-estenosis-art-tibial-posterior-angiotac] Angio TAC de EEII displasia fibromuscular y estenosis art tibial posterior
+- [angio-tac-arterial-y-venoso-de-extremidades-superiores-normal-angiotac] Angio TAC Arterial y venoso de extremidades superiores normal
+- [enteroclisis-x-tac-tac] Enteroclisis X TAC
+- [tac-cervical-absceso-odontoideo-tac] TAC Cervical Absceso Odontoideo
+- [angio-tac-eess-operculo-toracico-angiotac] Angio TAC EESS Operculo Toracico
+- [angio-tac-abdomen-y-pelvis-aneurisma-fusiforme-ao-abd-infrarrenal-angiotac] Angio TAC abdomen y pelvis aneurisma fusiforme Ao Abd infrarrenal
+- [angio-tac-abdomen-solo-vasos-angiotac] Angio TAC abdomen solo vasos
+- [angio-tac-de-abd-y-pelvis-clau-angiotac] Angio TAC De Abd Y Pelvis Clau
+- [tac-cerebro-fp-oidos-1-angiotac] TAC cerebro FP oídos (1)
+- [angio-tac-arterial-y-venoso-de-extremidades-superiores-angiotac-2] Angio TAC Arterial Y Venoso De Extremidades Superiores
+- [angio-tac-eess-operculo-toracico-angiotac-2] Angio TAC EESS Operculo Toracico

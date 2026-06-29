@@ -1,4 +1,4 @@
-import { Copy, FileSpreadsheet, Plus, Search, Sparkles } from "lucide-react";
+import { Copy, PencilLine, Plus, Search, Sparkles } from "lucide-react";
 import AnimatedLockIcon from "./AnimatedLockIcon";
 import ModalShell from "./ModalShell";
 
@@ -40,8 +40,9 @@ export default function HelpModal({
     <ModalShell
       open={open}
       wide
+      darkPanel
       title="Skelly te explica la app"
-      subtitle="Guia rapida para buscar mejor, importar plantillas y usar variables sin enredos."
+      subtitle="Guia rapida para buscar mejor, editar atajos y usar variables con claridad."
       onClose={onClose}
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -94,11 +95,12 @@ export default function HelpModal({
             <div className="max-w-3xl">
               <p className="text-xs uppercase tracking-[0.22em] text-cyan">Skelly onboarding</p>
               <h3 className="mt-2 font-display text-2xl font-semibold text-white sm:text-3xl">
-                Busca por fragmentos, copia rapido y deja listas tus variables.
+                Busca por fragmentos, ajusta tus atajos y copia rapido.
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate-200 sm:text-base">
                 No necesitas escribir el termino exacto. Puedes usar partes de una palabra, varias
-                palabras cortas o escribir sin acentos y Skelly intentara encontrar lo mas relevante.
+                palabras cortas o escribir sin acentos. Ademas, los atajos de tus plantillas se pueden
+                ajustar desde el detalle de cada plantilla, tambien en las oficiales.
               </p>
             </div>
 
@@ -112,12 +114,15 @@ export default function HelpModal({
           <GuideCard
             icon={Search}
             label="Busqueda"
-            title="Como buscar sin ser exacto"
-            description="El buscador revisa titulo, categoria, atajo y contenido de cada plantilla."
+            title="Como buscar y ajustar atajos"
+            description="El buscador revisa titulo, categoria, atajo y contenido. En tus plantillas puedes agregar, editar y eliminar atajos."
           >
             <Tip>Escribe fragmentos: nor encuentra normal, normales y coincidencias parecidas.</Tip>
             <Tip>Escribe sin acentos si quieres: torax tambien encuentra torax.</Tip>
             <Tip>Combina partes: varic nor prioriza plantillas de varices con contenido normal.</Tip>
+            <Tip>Abre la plantilla y usa Editar atajos para agregar, quitar o corregir chips sin entrar al editor completo.</Tip>
+            <Tip>El primer atajo es el principal y el chip visible en las tarjetas tiene un maximo de 18 caracteres. Si es mas largo, Skelletary muestra una version corta.</Tip>
+            <Tip>Tanto en plantillas oficiales como personales puedes ajustar los atajos sin salir del detalle.</Tip>
           </GuideCard>
 
           <GuideCard
@@ -132,29 +137,30 @@ export default function HelpModal({
           </GuideCard>
 
           <GuideCard
-            icon={FileSpreadsheet}
-            label="Importacion"
-            title="Como traer tus plantillas sin JSON"
-            description="Puedes cargar Excel y CSV con una vista previa antes de guardar."
+            icon={PencilLine}
+            label="Edicion"
+            title="Como editar plantillas oficiales y personales"
+            description="Edita titulo, categoria, atajos y contenido desde el mismo lugar. La nube guarda los cambios."
           >
-            <Tip>Sube tu archivo y mapea sus columnas a titulo, categoria, shortcut y contenido.</Tip>
-            <Tip>Las filas invalidas se marcan antes de importar para evitar errores raros.</Tip>
-            <Tip>Lo que importes queda disponible en tu cuenta apenas termine la carga.</Tip>
+            <Tip>Las plantillas oficiales y personales usan el mismo editor. La diferencia la notas al guardar: la oficial pasa a tu biblioteca personal con tus cambios.</Tip>
+            <Tip>El PIN local sigue siendo la barrera para evitar cambios accidentales. Desbloquea para editar.</Tip>
+            <Tip>El boton Eliminar solo aparece en plantillas que ya estan en tu biblioteca personal.</Tip>
           </GuideCard>
 
           <GuideCard
             icon={Sparkles}
             label="Variables"
             title="Como escribir variables dentro del texto"
-            description="Cualquier texto entre llaves dobles se convierte en un campo editable al copiar."
+            description="Skelletary siempre te guiara con al menos un antecedente editable antes de copiar."
           >
             <div className="rounded-[24px] border border-white/10 bg-slate-950/45 p-4 font-mono text-[13px] leading-6 text-cyan/90">
               ANTECEDENTES CLINICOS: {"{{antecedente}}"}
               <br />
               HALLAZGOS: lesion de {"{{tamano}}"} mm en {"{{localizacion}}"}.
             </div>
+            <Tip>Si dejas la variable antecedente en blanco, Skelletary la rellenara automaticamente con Sin diagnóstico.</Tip>
             <Tip>Si repites el mismo nombre de variable, la app te lo pedira una sola vez.</Tip>
-            <Tip>Si dejas una variable vacia, al copiar se reemplaza por ___.</Tip>
+            <Tip>Las demas variables vacias se reemplazan por ___ al copiar.</Tip>
           </GuideCard>
         </div>
       </div>

@@ -8,6 +8,8 @@ export default function ModalShell({
   children,
   footer,
   wide = false,
+  panelClassName = "",
+  darkPanel = false,
 }) {
   if (!open) {
     return null;
@@ -23,9 +25,11 @@ export default function ModalShell({
       }}
     >
       <div
-        className={`glass-panel animate-rise w-full overflow-hidden rounded-[28px] shadow-glow ${
+        className={`animate-rise w-full overflow-hidden rounded-[28px] border border-white/10 backdrop-blur-xl shadow-glow ${
+          darkPanel ? "bg-slate-950/96" : "bg-white/5"
+        } ${
           wide ? "max-w-5xl" : "max-w-2xl"
-        }`}
+        } ${panelClassName}`}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-6">

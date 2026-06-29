@@ -1,7 +1,7 @@
 import { Copy, MinusCircle, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getVoiceUsageHint, mergeVoiceTranscript } from "../lib/voiceInput";
-import { extractVariables } from "../lib/variables";
+import { extractVariables, getVariableFallbackValue, isAntecedentVariable } from "../lib/variables";
 import ModalShell from "./ModalShell";
 import VoiceFieldButton from "./VoiceFieldButton";
 
@@ -17,8 +17,10 @@ export default function VariableFillModal({
     [template],
   );
   const modalTitle = variables.length === 1 ? "Completar variable" : "Completar variables";
-  const modalSubtitle =
-    variables.length === 1
+  const hasAntecedentVariable = variables.some((variableName) => isAntecedentVariable(variableName));
+  const modalSubtitle = hasAntecedentVariable
+    ? 'Si dejas la variable "antecedente" en blanco, Skelletary la rellenara automaticamente con Sin diagnóstico. Las demas variables vacias se reemplazan por ___.'
+    : variables.length === 1
       ? "La variable vacia se reemplazara por ___ al copiar."
       : "Las variables vacias se reemplazaran por ___ al copiar.";
   const [values, setValues] = useState({});
@@ -95,7 +97,7 @@ export default function VariableFillModal({
                 setValues((current) => ({ ...current, [variableName]: event.target.value }))
               }
               className="field-shell"
-              placeholder="Escribe un valor o dejalo vacio para usar ___"
+              placeholder={`Escribe un valor o dejalo vacio para usar ${getVariableFallbackValue(variableName)}`}
             />
           </label>
         ))}

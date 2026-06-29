@@ -1,3 +1,16 @@
+// storage.js
+// ============================================================
+// Wrapper de localStorage. Skelletary usa la nube (Supabase) como fuente
+// principal de verdad; localStorage solo guarda cache + preferencias.
+//
+// Hay tres familias de datos en localStorage:
+//   1. Cache de biblioteca y sesion: se limpian al cerrar sesion.
+//   2. Estado de UI (PIN, edicion desbloqueada): se limpia al cerrar sesion.
+//   3. Preferencias persistentes por usuario (ej. silenciar a Skelly):
+//      se conservan al cerrar sesion porque son decisiones de UX.
+//
+// `clearAppStorage()` borra las primeras dos familias y deja la tercera.
+
 export const DEFAULT_PIN = "1991";
 export const EDIT_UNLOCK_MINUTES = 30;
 
@@ -6,6 +19,7 @@ const PIN_KEY = "skelletary.pin";
 const EDIT_UNLOCK_KEY = "skelletary.editUnlockedUntil";
 const SESSION_CACHE_KEY = "skelletary.cachedSession";
 const STORAGE_PREFIX = "skelletary.";
+const PREFERENCE_PREFIX = "skelletary.preference.";
 
 function canUseStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
@@ -158,6 +172,27 @@ export function markLocalMigrationCompleted(userId) {
   window.localStorage.setItem(getMigrationKey(userId), "done");
 }
 
+function getSkellyGreetingMutedKey(userId) {
+  return `${PREFERENCE_PREFIX}skellyGreetingMuted.${userId}`;
+}
+
+export function loadSkellyGreetingMuted(userId) {
+  if (!canUseStorage() || !userId) {
+    return false;
+  }
+
+  return window.localStorage.getItem(getSkellyGreetingMutedKey(userId)) === "true";
+}
+
+export function saveSkellyGreetingMuted(userId, muted) {
+  if (!canUseStorage() || !userId) {
+    return muted;
+  }
+
+  window.localStorage.setItem(getSkellyGreetingMutedKey(userId), String(Boolean(muted)));
+  return muted;
+}
+
 export function clearAppStorage() {
   if (!canUseStorage()) {
     return;
@@ -168,7 +203,9 @@ export function clearAppStorage() {
   for (let index = 0; index < window.localStorage.length; index += 1) {
     const key = window.localStorage.key(index);
 
-    if (key?.startsWith(STORAGE_PREFIX)) {
+    // Conservamos preferencias explicitas del usuario, como silenciar a Skelly,
+    // porque no son cache de sesion sino decisiones de UX que deben persistir.
+    if (key?.startsWith(STORAGE_PREFIX) && !key.startsWith(PREFERENCE_PREFIX)) {
       keysToRemove.push(key);
     }
   }

@@ -1,9 +1,6 @@
 import {
-  BadgeInfo,
   CalendarClock,
-  FileSpreadsheet,
   KeyRound,
-  Lock,
   ShieldCheck,
   UserRound,
   X,
@@ -30,14 +27,11 @@ export default function SettingsModal({
   onClose,
   accessState,
   appVersion,
-  canImport,
   canManagePassword,
   editUnlocked,
   profile,
-  onBlockedExport,
   onOpenChangePin,
   onOpenChangePassword,
-  onOpenImport,
   onSignOut,
 }) {
   const accountLabel = getProfileDisplayName(profile);
@@ -99,27 +93,6 @@ export default function SettingsModal({
         </ActionCard>
 
         <ActionCard
-          title="Importar plantillas"
-          description="Sube plantillas desde Excel o CSV para agregarlas a tu cuenta."
-        >
-          <button
-            type="button"
-            onClick={onOpenImport}
-            className="button-primary"
-            disabled={!canImport || !editUnlocked}
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Importar Excel o CSV
-          </button>
-
-          {!editUnlocked ? (
-            <div className="rounded-2xl border border-rose/20 bg-rose/10 px-4 py-3 text-sm text-slate-200">
-              Desbloquea la edicion con tu PIN local antes de importar.
-            </div>
-          ) : null}
-        </ActionCard>
-
-        <ActionCard
           title="Proteccion local"
           description="El PIN sigue funcionando como una barrera local para evitar cambios accidentales en tus plantillas."
         >
@@ -127,7 +100,7 @@ export default function SettingsModal({
             type="button"
             onClick={onOpenChangePin}
             className="button-secondary"
-            disabled={!canImport || !editUnlocked}
+            disabled={!editUnlocked}
           >
             <ShieldCheck className="h-4 w-4" />
             Cambiar PIN
@@ -135,26 +108,6 @@ export default function SettingsModal({
 
           <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
             Version actual: {appVersion}
-          </div>
-        </ActionCard>
-
-        <ActionCard
-          title="Exportacion deshabilitada"
-          description="En esta fase del producto nadie puede sacar datos desde la app. Solo se permite cargar informacion hacia la plataforma."
-        >
-          <button type="button" onClick={onBlockedExport} className="button-secondary">
-            <Lock className="h-4 w-4" />
-            Intentar exportar
-          </button>
-
-          <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
-            <div className="flex items-center gap-2 font-medium">
-              <BadgeInfo className="h-4 w-4" />
-              Regla actual del producto
-            </div>
-            <p className="mt-2 leading-6">
-              Puedes meter plantillas a Skelletary, pero por ahora no puedes sacar la data desde la app.
-            </p>
           </div>
         </ActionCard>
 

@@ -53,7 +53,10 @@ create table if not exists public.user_templates (
   category text not null,
   shortcut text not null default '',
   content text not null,
-  source_type text not null default 'manual' check (source_type in ('manual', 'csv', 'xlsx', 'duplicated_from_core', 'import')),
+  -- Antes existian 'csv', 'xlsx' e 'import' para soportar carga masiva.
+  -- Ahora la importacion quedo fuera del producto, asi que solo se aceptan
+  -- plantillas creadas a mano o promocionadas desde la biblioteca oficial.
+  source_type text not null default 'manual' check (source_type in ('manual', 'duplicated_from_core')),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -71,26 +74,10 @@ create table if not exists public.user_template_stats (
   primary key (user_id, template_origin, template_id)
 );
 
-create table if not exists public.import_jobs (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  kind text not null check (kind in ('csv', 'xlsx', 'manual')),
-  status text not null check (status in ('pending', 'completed', 'failed')),
-  filename text not null,
-  summary_json jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default timezone('utc', now())
-);
-
-create table if not exists public.import_rows (
-  id uuid primary key default gen_random_uuid(),
-  import_job_id uuid not null references public.import_jobs(id) on delete cascade,
-  title text,
-  category text,
-  shortcut text,
-  content text,
-  status text not null check (status in ('pending', 'imported', 'invalid', 'duplicate')),
-  created_at timestamptz not null default timezone('utc', now())
-);
+-- Limpieza de tablas obsoletas: la importacion masiva ya no forma parte del
+-- producto, asi que retiramos import_jobs e import_rows si todavia existen.
+drop table if exists public.import_rows;
+drop table if exists public.import_jobs;
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -174,8 +161,6 @@ alter table public.profiles enable row level security;
 alter table public.core_templates enable row level security;
 alter table public.user_templates enable row level security;
 alter table public.user_template_stats enable row level security;
-alter table public.import_jobs enable row level security;
-alter table public.import_rows enable row level security;
 
 -- La biblioteca oficial solo se comparte en lectura con usuarios autenticados
 -- cuyo perfil tenga habilitada esa biblioteca y acceso comercial vigente.
@@ -209,9 +194,9 @@ for insert
 to authenticated
 with check (auth.uid() = id);
 
-drop policy if exists "profiles_update_own" on public.profiles;
 -- El perfil contiene decisiones sensibles del owner, como acceso comercial y
 -- biblioteca oficial compartida. Por eso no dejamos updates directos del usuario.
+drop policy if exists "profiles_update_own" on public.profiles;
 
 drop policy if exists "user_templates_read_own" on public.user_templates;
 create policy "user_templates_read_own"
@@ -263,49 +248,3 @@ for update
 to authenticated
 using (auth.uid() = user_id and public.user_has_app_access(auth.uid()))
 with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
-
-drop policy if exists "import_jobs_read_own" on public.import_jobs;
-create policy "import_jobs_read_own"
-on public.import_jobs
-for select
-to authenticated
-using (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
-
-drop policy if exists "import_jobs_insert_own" on public.import_jobs;
-create policy "import_jobs_insert_own"
-on public.import_jobs
-for insert
-to authenticated
-with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
-
-drop policy if exists "import_rows_read_own" on public.import_rows;
-create policy "import_rows_read_own"
-on public.import_rows
-for select
-to authenticated
-using (
-  public.user_has_app_access(auth.uid())
-  and
-  exists (
-    select 1
-    from public.import_jobs jobs
-    where jobs.id = import_job_id
-      and jobs.user_id = auth.uid()
-  )
-);
-
-drop policy if exists "import_rows_insert_own" on public.import_rows;
-create policy "import_rows_insert_own"
-on public.import_rows
-for insert
-to authenticated
-with check (
-  public.user_has_app_access(auth.uid())
-  and
-  exists (
-    select 1
-    from public.import_jobs jobs
-    where jobs.id = import_job_id
-      and jobs.user_id = auth.uid()
-  )
-);

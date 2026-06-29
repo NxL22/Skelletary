@@ -6,6 +6,73 @@ export const SPECIAL_VIEWS = {
   recent: "Recientes",
 };
 export const DISPLAY_SHORTCUT_MAX_LENGTH = 18;
+const TITLE_SPLIT_PATTERN = /\s[-–]\s/;
+const TITLE_MODALITY_PREFIX_RULES = [
+  {
+    categoryNeedles: ["angiotac"],
+    prefixes: ["angio tac de ", "angio tac ", "tac "],
+  },
+  {
+    categoryNeedles: ["radiografia"],
+    prefixes: ["radiografia de ", "radiografia ", "rx "],
+  },
+  {
+    categoryNeedles: ["ecografia"],
+    prefixes: ["ecografia de ", "ecografia ", "eco "],
+  },
+  {
+    categoryNeedles: ["resonancia"],
+    prefixes: ["resonancia magnetica de ", "resonancia magnetica ", "rm "],
+  },
+  {
+    categoryNeedles: ["doppler"],
+    prefixes: ["doppler "],
+  },
+  {
+    categoryNeedles: ["urotac"],
+    prefixes: ["uro tac "],
+  },
+];
+const TITLE_LOWERCASE_WORDS = new Set([
+  "a",
+  "al",
+  "con",
+  "de",
+  "del",
+  "e",
+  "en",
+  "la",
+  "las",
+  "los",
+  "o",
+  "para",
+  "por",
+  "sin",
+  "un",
+  "una",
+  "y",
+]);
+const TITLE_UPPERCASE_TOKENS = new Set([
+  "AP",
+  "CT",
+  "DHC",
+  "EEII",
+  "EESS",
+  "FP",
+  "LAT",
+  "PA",
+  "RM",
+  "RX",
+  "TAC",
+  "TC",
+]);
+const TITLE_VISUAL_REPLACEMENTS = new Map([
+  ["abd", "Abdomen"],
+  ["clavicula", "Clavícula"],
+  ["pelv", "Pelvis"],
+  ["torax", "Tórax"],
+  ["tx", "Tórax"],
+]);
 
 const SHORTCUT_STOP_WORDS = new Set([
   "a",
@@ -49,6 +116,28 @@ export function sanitizeTemplateText(value = "") {
   return value.replace(/\bnormalin\b/gi, "normal");
 }
 
+function parseShortcutAliases(value = "") {
+  return value
+    .split(",")
+    .map((shortcut) => sanitizeTemplateText(shortcut.trim()))
+    .filter(Boolean);
+}
+
+function dedupeShortcutAliases(shortcuts = []) {
+  const seen = new Set();
+
+  return shortcuts.filter((shortcut) => {
+    const normalizedShortcut = normalizeSearchText(shortcut);
+
+    if (!normalizedShortcut || seen.has(normalizedShortcut)) {
+      return false;
+    }
+
+    seen.add(normalizedShortcut);
+    return true;
+  });
+}
+
 function getShortcutSourceWords(template) {
   return normalizeSearchText(`${template.title || ""} ${template.category || ""}`)
     .split(/\s+/)
@@ -86,16 +175,186 @@ function buildGeneratedShortcut(template) {
   return pieces.join(" ");
 }
 
-export function getTemplateDisplayShortcut(template) {
-  const rawShortcut = sanitizeTemplateText(template.shortcut?.trim() || "");
+export function getTemplateShortcutAliases(template) {
+  // Guardamos varios atajos en el mismo campo separados por comas para no abrir
+  // otra capa de complejidad en storage, Supabase o migraciones.
+  const aliases = dedupeShortcutAliases(
+    parseShortcutAliases(template.shortcut?.trim() || ""),
+  );
 
-  if (rawShortcut && rawShortcut.length <= DISPLAY_SHORTCUT_MAX_LENGTH) {
-    return rawShortcut;
+  if (aliases.length) {
+    return aliases;
   }
 
-  // Si el atajo original es demasiado largo o no existe, fabricamos uno corto
-  // desde titulo y categoria para mantener una UI estable y un alias util.
+  return [buildGeneratedShortcut(template)];
+}
+
+export function getTemplateStoredShortcut(template) {
+  return getTemplateShortcutAliases(template).join(", ");
+}
+
+export function getTemplateDisplayShortcut(template) {
+  const [primaryShortcut] = getTemplateShortcutAliases(template);
+
+  if (primaryShortcut && primaryShortcut.length <= DISPLAY_SHORTCUT_MAX_LENGTH) {
+    return primaryShortcut;
+  }
+
+  // Si el atajo principal es demasiado largo, fabricamos uno corto desde
+  // titulo y categoria para que la tarjeta no se deforme.
   return buildGeneratedShortcut(template);
+}
+
+function normalizeTitleComparison(value = "") {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es")
+    .trim();
+}
+
+function capitalizeFirstCharacter(value = "") {
+  if (!value) {
+    return "";
+  }
+
+  return value.charAt(0).toLocaleUpperCase("es") + value.slice(1);
+}
+
+function splitWordDecoration(word = "") {
+  const match = word.match(/^([^0-9A-Za-zÁÉÍÓÚÜÑáéíóúüñ]*)(.*?)([^0-9A-Za-zÁÉÍÓÚÜÑáéíóúüñ]*)$/u);
+
+  if (!match) {
+    return {
+      leading: "",
+      core: word,
+      trailing: "",
+    };
+  }
+
+  return {
+    leading: match[1] || "",
+    core: match[2] || "",
+    trailing: match[3] || "",
+  };
+}
+
+function formatDisplayTitleWord(word = "", index = 0) {
+  const { leading, core, trailing } = splitWordDecoration(word);
+
+  if (!core) {
+    return word;
+  }
+
+  const normalizedCore = normalizeTitleComparison(core);
+  const uppercaseToken = core.toLocaleUpperCase("es");
+
+  if (TITLE_UPPERCASE_TOKENS.has(uppercaseToken)) {
+    return `${leading}${uppercaseToken}${trailing}`;
+  }
+
+  if (TITLE_VISUAL_REPLACEMENTS.has(normalizedCore)) {
+    return `${leading}${TITLE_VISUAL_REPLACEMENTS.get(normalizedCore)}${trailing}`;
+  }
+
+  if (index > 0 && TITLE_LOWERCASE_WORDS.has(normalizedCore)) {
+    return `${leading}${normalizedCore}${trailing}`;
+  }
+
+  return `${leading}${capitalizeFirstCharacter(core.toLocaleLowerCase("es"))}${trailing}`;
+}
+
+function formatDisplayTitleSegment(value = "") {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word, index) => formatDisplayTitleWord(word, index))
+    .join(" ");
+}
+
+function splitTitleForCard(fullTitle) {
+  const parts = fullTitle
+    .split(TITLE_SPLIT_PATTERN)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length < 2) {
+    return null;
+  }
+
+  return {
+    primary: parts[0],
+    secondary: parts.slice(1).join(" - "),
+  };
+}
+
+function removeRedundantModalityPrefix(title = "", category = "") {
+  const normalizedCategory = normalizeTitleComparison(category);
+
+  for (const rule of TITLE_MODALITY_PREFIX_RULES) {
+    const matchesCategory = rule.categoryNeedles.some((needle) =>
+      normalizedCategory.includes(needle),
+    );
+
+    if (!matchesCategory) {
+      continue;
+    }
+
+    for (const prefix of rule.prefixes) {
+      const normalizedTitle = normalizeTitleComparison(title);
+
+      if (!normalizedTitle.startsWith(prefix)) {
+        continue;
+      }
+
+      const trimmedTitle = title.slice(prefix.length).trim();
+
+      if (trimmedTitle.length < 4) {
+        return title.trim();
+      }
+
+      return capitalizeFirstCharacter(trimmedTitle);
+    }
+  }
+
+  return title.trim();
+}
+
+export function getTemplateCardHeading(template) {
+  const fullTitle = sanitizeTemplateText(template.title?.trim() || "");
+
+  if (!fullTitle) {
+    return {
+      full: "",
+      primary: "",
+      secondary: "",
+    };
+  }
+
+  // La tarjeta puede mostrar un nombre mas corto que el titulo fuente,
+  // pero sin tocar la data real ni sacrificar utilidad clinica.
+  const splitHeading = splitTitleForCard(fullTitle);
+
+  if (splitHeading) {
+    return {
+      full: fullTitle,
+      primary: formatDisplayTitleSegment(
+        removeRedundantModalityPrefix(splitHeading.primary, template.category || ""),
+      ),
+      secondary: formatDisplayTitleSegment(splitHeading.secondary),
+    };
+  }
+
+  const condensedPrimary = formatDisplayTitleSegment(
+    removeRedundantModalityPrefix(fullTitle, template.category || ""),
+  );
+
+  return {
+    full: fullTitle,
+    primary: condensedPrimary,
+    secondary: "",
+  };
 }
 
 function nowIso() {
@@ -119,7 +378,7 @@ export function normalizeTemplate(template, index = 0) {
   const createdAt = template.createdAt || nowIso();
   const title = sanitizeTemplateText(template.title?.trim() || `Plantilla ${index + 1}`);
   const category = sanitizeTemplateText(template.category?.trim() || "Otros");
-  const shortcut = getTemplateDisplayShortcut({
+  const shortcut = getTemplateStoredShortcut({
     ...template,
     title,
     category,
@@ -152,7 +411,7 @@ export function createTemplate(input) {
   const timestamp = nowIso();
   const title = sanitizeTemplateText(input.title.trim());
   const category = sanitizeTemplateText(input.category.trim());
-  const shortcut = getTemplateDisplayShortcut({
+  const shortcut = getTemplateStoredShortcut({
     ...input,
     title,
     category,
@@ -194,7 +453,7 @@ export function updateTemplateRecord(template, changes) {
     ...changes,
     title,
     category,
-    shortcut: getTemplateDisplayShortcut({
+    shortcut: getTemplateStoredShortcut({
       ...template,
       ...changes,
       title,
@@ -209,32 +468,6 @@ export function updateTemplateRecord(template, changes) {
     libraryOrigin: changes.libraryOrigin ?? template.libraryOrigin,
     isUserOwned: changes.isUserOwned ?? template.isUserOwned,
     sourceType: changes.sourceType ?? template.sourceType,
-  };
-}
-
-export function duplicateTemplateRecord(template) {
-  const timestamp = nowIso();
-  const title = `Copia de ${template.title}`;
-  const shortcut = getTemplateDisplayShortcut({
-    ...template,
-    title,
-    shortcut: template.shortcut ? `${template.shortcut} copia` : "",
-  });
-
-  return {
-    ...template,
-    id: createTemplateId(`copia-${template.title}`),
-    title,
-    shortcut,
-    favorite: false,
-    copyCount: 0,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    lastCopiedAt: null,
-    libraryOrigin: "personal",
-    isUserOwned: true,
-    sourceType:
-      template.libraryOrigin === "core" ? "duplicated_from_core" : template.sourceType || "manual",
   };
 }
 
@@ -262,7 +495,13 @@ function buildSearchFields(template) {
   const title = normalizeSearchText(template.title);
   const category = normalizeSearchText(template.category);
   const shortcut = normalizeSearchText(
-    [template.shortcut, getTemplateDisplayShortcut(template)].filter(Boolean).join(" "),
+    [
+      template.shortcut,
+      ...getTemplateShortcutAliases(template),
+      getTemplateDisplayShortcut(template),
+    ]
+      .filter(Boolean)
+      .join(" "),
   );
   const content = normalizeSearchText(template.content);
 
