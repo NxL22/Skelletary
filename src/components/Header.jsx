@@ -64,22 +64,36 @@ function getRemainingTimeLabel(expiresAt) {
 function BrandBadge({ missing, onMissing }) {
   if (missing) {
     return (
-      <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-white/55 bg-[radial-gradient(circle_at_top,#ffffff_0%,#edf6ff_55%,#d7e7f5_100%)] shadow-[0_16px_34px_rgba(8,15,35,0.32)] ring-4 ring-white/10">
-        <div className="absolute inset-[4px] rounded-full border border-cyan/15 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(224,236,247,0.88))]" />
-        <Bone className="relative z-10 h-8 w-8 text-cyan" />
+      <div className="skelly-avatar-shell relative h-20 w-20">
+        <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-white/55 bg-[radial-gradient(circle_at_top,#ffffff_0%,#edf6ff_55%,#d7e7f5_100%)] shadow-[0_16px_34px_rgba(8,15,35,0.32)] ring-4 ring-white/10">
+          <div className="absolute inset-[4px] rounded-full border border-cyan/15 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(224,236,247,0.88))]" />
+          <Bone className="relative z-10 h-8 w-8 text-cyan" />
+        </div>
+        <svg className="skelly-avatar-ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle className="skelly-avatar-ring__base" cx="50" cy="50" r="47" />
+          <circle className="skelly-avatar-ring__active-glow" cx="50" cy="50" r="47" />
+          <circle className="skelly-avatar-ring__active" cx="50" cy="50" r="47" />
+        </svg>
       </div>
     );
   }
 
   return (
-    <div className="relative h-20 w-20 overflow-hidden rounded-full border border-white/55 bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef6ff_55%,#d8e6f4_100%)] shadow-[0_16px_34px_rgba(8,15,35,0.32)] ring-4 ring-white/10">
-      <div className="absolute inset-[4px] rounded-full bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.98),rgba(226,238,248,0.82))]" />
-      <img
-        src={getPublicAssetPath("imagenes de Skelly/skelly_logo.webp")}
-        alt="Logo de Skelletary"
-        className="relative z-10 h-full w-full object-contain object-center scale-[1.34]"
-        onError={onMissing}
-      />
+    <div className="skelly-avatar-shell relative h-20 w-20">
+      <div className="relative h-20 w-20 overflow-hidden rounded-full border border-white/55 bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef6ff_55%,#d8e6f4_100%)] shadow-[0_16px_34px_rgba(8,15,35,0.32)] ring-4 ring-white/10">
+        <div className="absolute inset-[4px] rounded-full bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.98),rgba(226,238,248,0.82))]" />
+        <img
+          src={getPublicAssetPath("imagenes de Skelly/skelly_logo.webp")}
+          alt="Logo de Skelletary"
+          className="relative z-10 h-full w-full object-contain object-center scale-[1.34]"
+          onError={onMissing}
+        />
+      </div>
+      <svg className="skelly-avatar-ring" viewBox="0 0 100 100" aria-hidden="true">
+        <circle className="skelly-avatar-ring__base" cx="50" cy="50" r="47" />
+        <circle className="skelly-avatar-ring__active-glow" cx="50" cy="50" r="47" />
+        <circle className="skelly-avatar-ring__active" cx="50" cy="50" r="47" />
+      </svg>
     </div>
   );
 }

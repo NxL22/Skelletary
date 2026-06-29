@@ -175,6 +175,58 @@ body {
   }
 }
 
+.skelly-avatar-shell {
+  isolation: isolate;
+}
+
+.skelly-avatar-ring {
+  position: absolute;
+  inset: -0.28rem;
+  width: calc(100% + 0.56rem);
+  height: calc(100% + 0.56rem);
+  transform: rotate(-90deg);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.skelly-avatar-ring circle {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: butt;
+}
+
+.skelly-avatar-ring__base {
+  stroke: rgba(125, 223, 246, 0.22);
+}
+
+.skelly-avatar-ring__active-glow,
+.skelly-avatar-ring__active {
+  stroke: rgb(125 223 246);
+  stroke-dasharray: 295.31;
+  stroke-dashoffset: 295.31;
+  animation: skelly-avatar-ring-progress 60s linear infinite;
+}
+
+.skelly-avatar-ring__active-glow {
+  stroke-width: 4.5;
+  opacity: 0.42;
+  filter: blur(1.8px);
+}
+
+.skelly-avatar-ring__active {
+  stroke-width: 2.6;
+}
+
+@keyframes skelly-avatar-ring-progress {
+  from {
+    stroke-dashoffset: 295.31;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 @keyframes skelly-bubble-pop {
   0% {
     opacity: 0;
@@ -299,6 +351,8 @@ body {
   .button-danger > svg,
   .lock-icon,
   .radiology-badge,
+  .skelly-avatar-ring__active-glow,
+  .skelly-avatar-ring__active,
   .skelly-bubble,
   .skelly-sparkle,
   .skelly-tail {
@@ -308,6 +362,10 @@ body {
 
   .radiology-badge__pulse-active {
     animation: none;
+  }
+
+  .skelly-avatar-ring__active {
+    stroke-dashoffset: 0;
   }
 
   .button-primary:hover > svg,
