@@ -1,4 +1,4 @@
-import {
+﻿import {
   Copy,
   Heart,
   MinusCircle,
@@ -372,9 +372,9 @@ export default function TemplateDetailModal({
           </div>
 
           {variableEnabled ? (
-            <div className="rounded-[26px] border border-rose/20 bg-rose/10 p-5">
+            <div className="rounded-[26px] border border-lavender/20 bg-lavender/10 p-5">
               <div className="flex items-center gap-2 text-base font-semibold text-white">
-                <Sparkles className="h-4 w-4 text-rose" />
+                <Sparkles className="h-4 w-4 text-lavender" />
                 {inlineFillLabel}
               </div>
               <p className="mt-2 text-sm leading-6 text-slate-200">

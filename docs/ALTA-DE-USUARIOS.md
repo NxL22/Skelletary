@@ -43,6 +43,16 @@ Ademas puedes decidir si esa cuenta recibe o no la biblioteca oficial:
 - `--share-core=true`
 - `--share-core=false`
 
+Y si esa cuenta tendra acceso al modulo Asistente de informes (Skelly
+Redactor):
+
+- `--ai-access=true`
+- `--ai-access=false`
+
+El flag `--ai-access` es opt-in por usuaria. Por defecto es `false`
+para proteger a cuentas existentes: nadie recibe acceso al asistente sin
+que vos lo indiques explicitamente al crear o actualizar el usuario.
+
 ## Otras variantes
 
 Sin trial pero con acceso inmediato:
@@ -62,6 +72,50 @@ Cuenta activa por un ano:
 ```bash
 npm run user:create -- --email=usuario@clinica.com --access=active --subscription-days=365 --share-core=true
 ```
+
+Cuenta activa con el modulo Asistente habilitado:
+
+```bash
+npm run user:create -- --email=esposa@clinica.com --access=active --share-core=true --ai-access=true --name="Dra. Mi Esposa"
+```
+
+## Modulo Asistente de informes (`--ai-access`)
+
+El modulo Asistente replica el Custom GPT del owner dentro de Skelletary.
+Es opt-in por usuaria porque consume tokens del LLM y expone el resultado
+de la llamada a un proveedor externo (Mavis / MiniMax).
+
+Como owner:
+
+- Activarlo al crear una cuenta: `--ai-access=true`.
+- Actualizar una cuenta existente: el script acepta el flag en cualquier
+  ejecucion posterior (hace UPSERT en `profiles`), asi que alcanza con
+  correr el comando de nuevo con el mismo email y el flag cambiado.
+- Desactivarlo: `--ai-access=false`.
+
+Que necesita la cuenta ademas del flag:
+
+- `access_status` en `active` o `trial` no vencido (lo evalua el Edge
+  Function del Asistente en cada request).
+- Sesion valida de Supabase.
+
+Que no hace el flag:
+
+- No comparte automaticamente tu biblioteca oficial con la cuenta nueva.
+  Para eso sigue funcionando `--share-core=true`.
+- No crea registros en `assistant_usage` por su cuenta: la fila aparece
+  cuando la usuaria hace su primer envio real.
+
+Para que el modulo funcione end-to-end tambien necesitas haber:
+
+1. Corrado la migracion SQL que crea `profiles.has_assistant_access` y
+   la tabla `assistant_usage`.
+2. Subido los archivos `guia-estilo.md`, `diccionario-plantillas.md` y
+   `plantillas-corregidas.md` al bucket `assistant-knowledge` de Storage.
+3. Desplegado la Edge Function `assistant-report` y configurado los
+   secrets `MINIMAX_API_KEY`, `MINIMAX_BASE_URL` y `MINIMAX_MODEL`.
+
+Detalle paso a paso del deploy en `docs/ARQUITECTURA.md > Modulo Asistente`.
 
 ## Reenviar un correo al usuario
 

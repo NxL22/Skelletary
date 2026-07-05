@@ -52,6 +52,9 @@ export function normalizeProfile(profile) {
     email: profile.email || profile.user_email || "",
     displayName: profile.display_name || "",
     hasCoreLibrary: profile.has_core_library ?? true,
+    // Modulo Asistente de informes (Skelly redactor). Opt-in por usuaria
+    // y decidido por el owner al crearla o actualizarla via create-user.mjs.
+    hasAssistantAccess: profile.has_assistant_access ?? false,
     accessStatus: profile.access_status || ACCESS_STATUS.pending,
     trialStartsAt: profile.trial_starts_at || null,
     trialEndsAt: profile.trial_ends_at || null,

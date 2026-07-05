@@ -272,6 +272,116 @@ El sistema esta pensado para que Skelly nunca rompa la app:
 
 Para mas detalle tecnico ver `docs/SKELLY.md`.
 
+## Skelly como asistente de informes (v2)
+
+A partir de la migracion del modulo Asistente, Skelly tambien te ayuda
+a redactar informes. La mascota sigue siendo Skelly (no se toca su voz,
+su texto, su audio ni su video), pero ahora su "cerebro" - la IA que
+produce texto - vive en un panel horizontal full width **debajo** del
+card de la mascota en el Header.
+
+El panel aparece unicamente si tu cuenta tiene el flag `has_assistant_access`
+activado por el owner al crearte o actualizarte con `--ai-access=true`.
+
+### Como usar el panel
+
+El panel esta dividido en dos columnas lado a lado (en mobile se apilan).
+
+**Columna izquierda — tu mensaje:**
+1. Escribi una sola linea en lenguaje natural en el textarea. Ejemplos:
+   - `eco abdomen normal agrega: esteatosis`
+   - `eco tiroides con niodulo de 8mm en lobulo derecho`
+   - `corrige este informe manteniendo mi estilo: <pegar informe>`
+   - `doppler carotideo, paciente con ACV previo`
+2. Enter (sin Shift) envia la peticion. Shift+Enter agrega una linea.
+3. El boton redondo turquesa en la esquina inferior derecha del textarea
+   tambien envia. Esta deshabilitado cuando el textarea esta vacio.
+
+**Columna derecha — el resultado (aparece mientras se genera):**
+4. El texto aparece palabra por palabra (streaming) desde el primer segundo.
+   No hay que esperar a que el informe este completo para verlo aparecer.
+5. Cuando termina, se renderiza con el formato canonico:
+   `ANTECEDENTES CLINICOS: ... HALLAZGOS: ... IMPRESION: ...`.
+6. El boton "Copiar" lo manda al portapapeles.
+
+**Feedback (entrena a Skelly para imitarte):**
+- **👍 Sirvio tal cual, guardar**: registra que el informe de Skelly ya
+  estaba bien. Skelly aprende de tus aciertos.
+- **✏️ Lo retoque y guardo version final**: abre el informe en modo
+  edicion in-place. Edita el texto como quieras, apretas "Guardar
+  version final" y Skelly aprende de tu correccion.
+
+Despues de unos cuantos feedbacks, Skelly empieza a escribir en un estilo
+mas parecido al tuyo.
+
+### Que reglas sigue el Asistente
+
+Las mismas que tu Custom GPT original:
+
+- Siempre entrega texto plano (nunca Markdown).
+- Estructura exacta: ANTECEDENTES CLINICOS, HALLAZGOS, IMPRESION.
+- Una sola linea en blanco entre secciones, ninguna dentro.
+- Frase sistematica al inicio de HALLAZGOS en ecografia.
+- "Sin diagnostico" cuando no hay antecedentes.
+- No inventa hallazgos, medidas ni identificadores.
+- Si la frase sistematica la saltea, el backend la agrega automaticamente.
+- **Solo responde a informes radiologicos.** Si le escribis algo que no
+  es un informe, devuelve: "Solo puedo ayudar a redactar informes
+  radiologicos." Esta limitacion esta implementada con 3 capas
+  independientes (prompt, validacion de input, validacion de output).
+
+### Limite de uso
+
+- 300 envios por ventana movil de 12h por usuaria.
+- Cuando llegas al limite, el panel muestra un mensaje claro y bloquea
+  nuevos envios hasta que la ventana se reinicie.
+- El contador visible en el panel muestra cuantos envios te quedan.
+- **Guardar feedback NO consume rate limit** — es gratis.
+
+### Privacidad
+
+- El prompt prohibe que la IA incluya nombres, RUT u otros
+  identificadores de pacientes.
+- Los pares de feedback se guardan en el bucket privado
+  `assistant-feedback/feedback/{tu_user_id}.md` como markdown
+  descargable. Cada par pesa ~3 KB; el sistema retiene los ultimos 50
+  pares por usuaria (tope ~150 KB).
+- El contenido clinico se envia al proveedor de IA (Mavis / MiniMax).
+  Si en algun momento necesitas guardar evidencia formal de que no se
+  filtra PHI, hay que evaluar el proveedor y eventualmente firmar un
+  acuerdo (BAA o equivalente).
+- La API key del LLM vive solo en los secrets del Edge Function, nunca
+  en el navegador.
+
+### Que pasa si algo falla
+
+| Sintoma | Causa probable | Que hacer |
+|---|---|---|
+| El panel no aparece | `has_assistant_access` esta en `false` | Pedirle al owner que reactive el flag con `--ai-access=true` |
+| "Has alcanzado el limite" | 300 envios / 12h | Esperar a que la ventana se reinicie |
+| "Solo puedo ayudar a redactar informes radiologicos." | El input no parece un informe (sin keywords de modalidad) | Reformular: incluir "eco", "rx", "tac", "hallazgo", etc. |
+| "No pudimos contactar al asistente" | Edge Function sin desplegar o sin secrets | Revisar `docs/ARQUITECTURA.md > Modulo Asistente` |
+| "Tu acceso no esta vigente" | Cuenta `expired` o `trial` vencido | Renovar acceso desde el script |
+| El streaming queda colgado | Timeout del backend o de la red | Esperar 65s al reintento automatico, o recargar la pagina |
+| Salida con markdown o sin secciones | Caso raro del LLM | Reportar al owner con el input exacto |
+
+## Tu nombre visible (editable)
+
+Tu cuenta tiene un **nombre visible** (`display_name`) que aparece en el
+Header y al pie del dashboard. Lo setea el owner al crearte con
+`--name="Dra. Ejemplo"`, pero ahora **vos podes cambiarlo en cualquier
+momento**:
+
+1. Apreta "Skelly te guia" -> "Ajustes" en la cabecera (o la opcion
+   equivalente segun el menu de tu cuenta).
+2. La primera card se llama **"Mi perfil"**.
+3. Cambia el texto del input "Nombre para mostrar".
+4. Apreta **Guardar nombre**.
+
+El cambio se refleja al instante en el Header. Validaciones: el nombre
+debe tener entre 2 y 60 caracteres (validacion server-side via trigger
+SQL en `profiles`).
+
 ## Donde vive cada cosa en el codigo
 
 Si te toca mantener la app y no recordas donde estaba algo, aca va un
@@ -283,6 +393,10 @@ mapa rapido:
 | Pantalla de login/invitacion | `src/components/AuthScreen.jsx` |
 | Cabecera del dashboard | `src/components/Header.jsx` |
 | Skelly (mascota) | `src/components/SkellyDashboardMascota.jsx` + `src/lib/skellyMensajes.js` + `src/data/skellyMensajes.js` |
+| Asistente de informes (UI) | `src/components/AssistantPanel.jsx` |
+| Asistente de informes (cliente) | `src/lib/assistant.js` + `src/lib/assistantSanitize.js` |
+| Asistente de informes (backend) | `supabase/functions/assistant-report/` |
+| Asistente de informes (knowledge) | `supabase/knowledge/*.md` |
 | Biblioteca oficial (JSON) | `src/data/defaultTemplates.json` |
 | Reglas de plantillas | `src/lib/templates.js` |
 | Sincronizacion con la nube | `src/lib/remoteTemplates.js` |
@@ -294,6 +408,7 @@ mapa rapido:
 | Dictado por voz en campos | `src/lib/voiceInput.js` |
 | Alta manual de usuarios (script) | `scripts/create-user.mjs` |
 | Paso a paso para crear usuarios | `docs/ALTA-DE-USUARIOS.md` |
+| Arquitectura y modulos | `docs/ARQUITECTURA.md` |
 
 Para entender los flujos de fondo (login, alta, biblioteca), lee
 `docs/ARQUITECTURA.md`. Para reglas de estilo y nombres, `docs/CONVENCIONES.md`.

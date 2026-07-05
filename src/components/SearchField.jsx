@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+﻿import { Search, X } from "lucide-react";
 import { mergeVoiceTranscript } from "../lib/voiceInput";
 import VoiceFieldButton from "./VoiceFieldButton";
 

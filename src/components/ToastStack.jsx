@@ -1,8 +1,8 @@
-import { X } from "lucide-react";
+﻿import { X } from "lucide-react";
 
 const TONE_CLASSES = {
   info: "border-cyan/30 bg-cyan/10 text-cyan",
-  success: "border-emerald-400/30 bg-emerald-400/10 text-emerald-50",
+  success: "border-emerald-400/30 bg-emerald-400/10 text-emerald-400",
   error: "border-rose/30 bg-rose/10 text-rose",
 };
 

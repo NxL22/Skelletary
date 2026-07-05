@@ -1,4 +1,4 @@
-import { Copy, MinusCircle, Sparkles } from "lucide-react";
+﻿import { Copy, MinusCircle, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getVoiceUsageHint, mergeVoiceTranscript } from "../lib/voiceInput";
 import { extractVariables, getVariableFallbackValue, isAntecedentVariable } from "../lib/variables";
@@ -61,7 +61,7 @@ export default function VariableFillModal({
         </div>
       }
     >
-      <div className="mb-5 rounded-[24px] border border-rose/20 bg-rose/10 p-4 text-sm text-white">
+      <div className="mb-5 rounded-[24px] border border-lavender/20 bg-lavender/10 p-4 text-sm text-white">
         <div className="flex items-center gap-2 font-medium">
           <Sparkles className="h-4 w-4" />
           {template.title}

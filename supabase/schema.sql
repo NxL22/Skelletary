@@ -11,6 +11,9 @@ create table if not exists public.profiles (
   email text unique,
   display_name text default '',
   has_core_library boolean not null default true,
+  -- Habilita el modulo Skelly Asistente (redactor de informes con LLM).
+  -- El owner lo activa por usuaria al crearla o actualizarla via create-user.mjs.
+  has_assistant_access boolean not null default false,
   access_status text not null default 'pending' check (access_status in ('pending', 'trial', 'active', 'expired')),
   trial_starts_at timestamptz,
   trial_ends_at timestamptz,
@@ -23,6 +26,12 @@ create table if not exists public.profiles (
 -- la alinean con el esquema actual sin obligar a recrear la tabla.
 alter table public.profiles
 add column if not exists has_core_library boolean not null default true;
+
+-- El modulo Skelly Asistente (redactor de informes) es opt-in por usuaria.
+-- El default `false` protege a cuentas existentes: nadie recibe acceso sin
+-- que el owner lo habilite explicitamente al crearla o actualizarla.
+alter table public.profiles
+add column if not exists has_assistant_access boolean not null default false;
 
 alter table public.profiles
 alter column access_status set default 'pending';
@@ -62,6 +71,35 @@ create table if not exists public.user_templates (
 );
 
 create index if not exists user_templates_user_id_idx on public.user_templates(user_id);
+
+-- Tabla de rate limiting del modulo Asistente.
+-- Lleva el conteo de envios por usuaria dentro de una ventana movil de 12h.
+-- El Edge Function hace el UPSERT con service role al validar cada request.
+create table if not exists public.assistant_usage (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  window_start timestamptz not null default timezone('utc', now()),
+  count integer not null default 0 check (count >= 0),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists assistant_usage_window_idx
+  on public.assistant_usage(window_start);
+
+drop trigger if exists assistant_usage_set_updated_at on public.assistant_usage;
+create trigger assistant_usage_set_updated_at
+before update on public.assistant_usage
+for each row execute function public.set_updated_at();
+
+alter table public.assistant_usage enable row level security;
+
+-- El usuario puede leer su propio contador para mostrarlo en la UI.
+-- El backend (service role) es el unico que escribe.
+drop policy if exists "assistant_usage_read_own" on public.assistant_usage;
+create policy "assistant_usage_read_own"
+on public.assistant_usage
+for select
+to authenticated
+using (auth.uid() = user_id);
 
 create table if not exists public.user_template_stats (
   user_id uuid not null references auth.users(id) on delete cascade,

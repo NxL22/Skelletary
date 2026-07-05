@@ -51,7 +51,7 @@ function parseArgs(argv) {
 function printUsage() {
   console.log(`
 Uso:
-  npm run user:create -- --email=usuario@clinica.com --access=trial --share-core=true --name="Dra. Ejemplo"
+  npm run user:create -- --email=usuario@clinica.com --access=trial --share-core=true --ai-access=true --name="Dra. Ejemplo"
 
 Opciones:
   --email=...                 Correo del usuario. Obligatorio.
@@ -63,6 +63,9 @@ Opciones:
                               Estrategia de reenvio si la cuenta ya existe. Por defecto: auto.
                               Con --password, por defecto no envia correo.
   --share-core=true|false     Decide si recibe la biblioteca oficial. Por defecto: true.
+  --ai-access=true|false      Habilita el modulo Asistente de informes (Skelly).
+                              Por defecto: false. Recomendado solo para la
+                              radiologa del owner hasta que el modulo madure.
   --trial-days=15             Duracion de la prueba si access=trial.
   --subscription-days=365     Duracion si access=active.
   --app-url=https://skelletary.com
@@ -132,6 +135,7 @@ function buildProfilePayload({
   access,
   displayName,
   email,
+  hasAssistantAccess,
   hasCoreLibrary,
   now,
   subscriptionDays,
@@ -143,6 +147,10 @@ function buildProfilePayload({
     email,
     display_name: displayName,
     has_core_library: hasCoreLibrary,
+    // Flag opt-in del modulo Asistente. El default `false` protege a
+    // cuentas existentes: nadie recibe acceso sin que el owner lo indique
+    // explicitamente al crear o actualizar el usuario.
+    has_assistant_access: hasAssistantAccess,
     access_status: access,
     trial_starts_at: null,
     trial_ends_at: null,
@@ -240,6 +248,7 @@ const displayName = String(args.name || "").trim();
 const access = normalizeAccess(args.access);
 const resendMode = normalizeResendMode(args.resend || (directPassword ? "none" : "auto"));
 const hasCoreLibrary = normalizeBooleanFlag(args["share-core"], true);
+const hasAssistantAccess = normalizeBooleanFlag(args["ai-access"], false);
 const trialDays = toPositiveInteger(args["trial-days"], 15);
 const subscriptionDays = toPositiveInteger(args["subscription-days"], 365);
 const appUrl = String(args["app-url"] || process.env.SKELLETARY_APP_URL || process.env.VITE_APP_URL || "")
@@ -350,6 +359,7 @@ try {
     access,
     displayName,
     email,
+    hasAssistantAccess,
     hasCoreLibrary,
     now: new Date(),
     subscriptionDays,
@@ -376,6 +386,9 @@ try {
   console.log(`Estado inicial: ${access}`);
   console.log(
     `Biblioteca oficial: ${hasCoreLibrary ? "compartida con este usuario" : "no compartida"}`,
+  );
+  console.log(
+    `Asistente de informes: ${hasAssistantAccess ? "habilitado" : "deshabilitado"}`,
   );
   if (redirectTo) {
     console.log(`Redirect principal: ${redirectTo}`);
