@@ -1,4 +1,16 @@
 /** @type {import('tailwindcss').Config} */
+// Configuracion de Tailwind para Skelletary.
+//
+// PALETA VIEJA (rollback controlado 2026-07-04): restauramos los tokens
+// originales para que el diseno vuelva al estado conocido antes del intento
+// de migracion a la paleta de Stitch. Skelly mascota vuelve a verse igual.
+//
+// - primary sigue siendo `cyan` (turquesa #7BDFF6).
+// - secondary sigue siendo `lavender` (#B8B5FF).
+// - error/warning/success tienen alias a rose/amber/emerald.
+//
+// La funcionalidad nueva (AssistantPanel horizontal, feedback loop, SSE,
+// etc.) NO se toca. Solo se revierte el lenguaje visual.
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {

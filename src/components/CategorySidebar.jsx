@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Clock3, FolderOpen, LayoutGrid, Star } from "lucide-react";
+﻿import { ChevronLeft, ChevronRight, Clock3, FolderOpen, LayoutGrid, Star } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { SPECIAL_VIEWS } from "../lib/templates";
 import SearchField from "./SearchField";

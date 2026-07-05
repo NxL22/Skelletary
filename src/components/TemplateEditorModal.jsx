@@ -1,4 +1,4 @@
-import { Save, Trash2, X } from "lucide-react";
+﻿import { Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getVoiceUsageHint, mergeVoiceTranscript } from "../lib/voiceInput";
 import ModalShell from "./ModalShell";

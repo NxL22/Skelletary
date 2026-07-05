@@ -1,4 +1,4 @@
-import { Bone, SearchX } from "lucide-react";
+﻿import { Bone, SearchX } from "lucide-react";
 
 export default function EmptyState({ title, description, query }) {
   return (
@@ -7,7 +7,7 @@ export default function EmptyState({ title, description, query }) {
         {query ? (
           <SearchX className="h-10 w-10 text-cyan" />
         ) : (
-          <Bone className="h-10 w-10 text-rose" />
+          <Bone className="h-10 w-10 text-lavender" />
         )}
       </div>
       <h3 className="font-display text-2xl font-semibold text-white">{title}</h3>

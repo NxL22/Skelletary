@@ -1,4 +1,4 @@
-import { normalizeTemplateContentSpacing } from "../lib/reportFormatting";
+﻿import { normalizeTemplateContentSpacing } from "../lib/reportFormatting";
 import { ensureRequiredTemplateVariables } from "../lib/variables";
 
 function isPlaceholder(part) {

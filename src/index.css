@@ -43,6 +43,125 @@ body {
   background: rgba(15, 27, 49, 0.65);
 }
 
+@layer utilities {
+  .skelly-dna-glow {
+    filter:
+      drop-shadow(0 0 5px rgba(123, 223, 246, 0.72))
+      drop-shadow(0 0 16px rgba(123, 223, 246, 0.2));
+    perspective: 220px;
+  }
+
+  .skelly-dna-rotate {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: skelly-dna-rotate 2.8s linear infinite;
+    will-change: transform;
+  }
+
+  .skelly-dna-rise {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: skelly-dna-rise 1.9s linear infinite;
+    will-change: transform;
+  }
+
+  .skelly-dna-rail {
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 8 10;
+    animation: skelly-dna-stroke-flow 0.9s linear infinite;
+  }
+
+  .skelly-dna-rail--front {
+    opacity: 0.95;
+  }
+
+  .skelly-dna-rail--back {
+    opacity: 0.42;
+    stroke-width: 1.8;
+  }
+
+  .skelly-dna-rung {
+    stroke: #7bdff6;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-dasharray: 34;
+    stroke-dashoffset: 34;
+    opacity: 0;
+    animation: skelly-dna-draw-rung 1.35s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -55ms);
+  }
+
+  @keyframes skelly-dna-rise {
+    from {
+      transform: translateY(0);
+    }
+
+    to {
+      transform: translateY(-96px);
+    }
+  }
+
+  @keyframes skelly-dna-rotate {
+    0% {
+      transform: perspective(220px) rotateY(0deg) rotateZ(-2deg);
+    }
+
+    50% {
+      transform: perspective(220px) rotateY(180deg) rotateZ(2deg);
+    }
+
+    100% {
+      transform: perspective(220px) rotateY(360deg) rotateZ(-2deg);
+    }
+  }
+
+  @keyframes skelly-dna-stroke-flow {
+    from {
+      stroke-dashoffset: 0;
+    }
+
+    to {
+      stroke-dashoffset: -18;
+    }
+  }
+
+  @keyframes skelly-dna-draw-rung {
+    0%,
+    16% {
+      stroke-dashoffset: 34;
+      opacity: 0;
+    }
+
+    38%,
+    72% {
+      stroke-dashoffset: 0;
+      opacity: 0.9;
+    }
+
+    100% {
+      stroke-dashoffset: -34;
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skelly-dna-rotate,
+    .skelly-dna-rise,
+    .skelly-dna-rail,
+    .skelly-dna-rung {
+      animation: none;
+    }
+
+    .skelly-dna-rung {
+      stroke-dashoffset: 0;
+      opacity: 0.85;
+    }
+  }
+}
+
 .glass-panel {
   @apply border border-white/10 bg-white/5 backdrop-blur-xl;
 }
@@ -556,11 +675,11 @@ body {
   background:
     radial-gradient(circle, rgba(246, 171, 200, 0.34) 0%, rgba(246, 171, 200, 0.14) 42%, transparent 74%);
   filter: blur(4px);
-  animation: footer-heart-halo 3.2s ease-in-out infinite;
+  animation: footer-heart-halo 2.4s ease-in-out infinite;
 }
 
 .footer-heart-icon {
-  animation: footer-heart-beat 3.2s cubic-bezier(0.2, 0.75, 0.18, 1) infinite;
+  animation: footer-heart-beat 2.4s cubic-bezier(0.2, 0.75, 0.18, 1) infinite;
   transform-origin: center;
   will-change: transform, filter;
 }

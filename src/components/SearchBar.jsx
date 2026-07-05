@@ -1,4 +1,4 @@
-import SearchField from "./SearchField";
+﻿import SearchField from "./SearchField";
 
 export default function SearchBar({
   value,

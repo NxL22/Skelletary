@@ -1,4 +1,4 @@
-import { Copy, PencilLine, Plus, Search, Sparkles } from "lucide-react";
+﻿import { Copy, PencilLine, Plus, Search, Sparkles } from "lucide-react";
 import AnimatedLockIcon from "./AnimatedLockIcon";
 import ModalShell from "./ModalShell";
 
@@ -89,7 +89,7 @@ export default function HelpModal({
       }
     >
       <div className="space-y-5">
-        <section className="relative overflow-hidden rounded-[28px] border border-cyan/20 bg-[linear-gradient(135deg,rgba(123,223,246,0.16),rgba(255,255,255,0.04))] p-5 sm:p-6">
+        <section className="relative overflow-hidden rounded-[28px] border border-cyan/20 bg-[linear-gradient(135deg,rgba(79,209,197,0.16),rgba(255,255,255,0.04))] p-5 sm:p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_30%)]" />
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
@@ -153,7 +153,7 @@ export default function HelpModal({
             title="Como escribir variables dentro del texto"
             description="Skelletary siempre te guiara con al menos un antecedente editable antes de copiar."
           >
-            <div className="rounded-[24px] border border-white/10 bg-slate-950/45 p-4 font-mono text-[13px] leading-6 text-cyan/90">
+            <div className="rounded-[24px] border border-white/10 bg-slate-950/45 p-4 font-mono text-[13px] leading-6 text-cyan">
               ANTECEDENTES CLINICOS: {"{{antecedente}}"}
               <br />
               HALLAZGOS: lesion de {"{{tamano}}"} mm en {"{{localizacion}}"}.

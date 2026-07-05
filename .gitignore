@@ -5,3 +5,8 @@ dist
 .env
 .env.local
 .env.*.local
+
+# Cache local de la CLI de Supabase (metadatos del proyecto vinculado).
+# Contiene project ref, versiones de servicios y URL del pooler. No es
+# codigo fuente y no debe ir al repo.
+supabase/.temp/

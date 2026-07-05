@@ -100,7 +100,7 @@ export async function fetchRemoteWorkspace(userId) {
   const profileResult = await supabase
     .from("profiles")
     .select(
-      "id, email, display_name, has_core_library, access_status, trial_starts_at, trial_ends_at, subscription_ends_at, created_at, updated_at",
+      "id, email, display_name, has_core_library, has_assistant_access, access_status, trial_starts_at, trial_ends_at, subscription_ends_at, created_at, updated_at",
     )
     .eq("id", userId)
     .maybeSingle();

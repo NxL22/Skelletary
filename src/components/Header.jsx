@@ -1,6 +1,7 @@
-import {
+﻿import {
   Bone,
   CircleHelp,
+  Info,
   LogOut,
   Plus,
   Pointer,
@@ -12,6 +13,20 @@ import { getAccessCountdownLabel, getProfileDisplayName } from "../lib/access";
 import { getPublicAssetPath } from "../lib/publicAssets";
 import AnimatedLockIcon from "./AnimatedLockIcon";
 import SkellyDashboardMascota from "./SkellyDashboardMascota";
+import AssistantPanel from "./AssistantPanel";
+
+// Header principal del dashboard.
+//
+// LAYOUT ORIGINAL (rollback 2026-07-04): vuelve al grid de 2 columnas con
+// Skely mascota + Asistente vertical angosto a la derecha, y tarjetas
+// Flujo + Cuenta a la izquierda. Asi Skely mascota vuelve a verse grande
+// como antes.
+//
+// Mejoras que se mantienen adentro del Asistente:
+//   - Sin dropdown de plantilla.
+//   - Send flotante en el textarea.
+//   - Botones de feedback (👍 / ✏️) con modo edicion in-place.
+//   - Streaming SSE del Edge Function.
 
 function RadiologyPulseBadge() {
   return (
@@ -104,6 +119,7 @@ export default function Header({
   backendConfigured,
   editUnlocked,
   editingEnabled,
+  hasAssistantAccess = false,
   hasSession,
   profile,
   skellyIntroToken,
@@ -111,10 +127,12 @@ export default function Header({
   unlockExpiresAt,
   onAccountClick,
   onHelpClick,
+  onPushToast,
   onUnlockClick,
   onLockClick,
   onNewTemplate,
   onSignOut,
+  onFeedbackRecorded = null,
 }) {
   const [brandMissing, setBrandMissing] = useState(false);
   const remainingLabel = getRemainingTimeLabel(unlockExpiresAt);
@@ -126,8 +144,9 @@ export default function Header({
       <div className="scan-grid absolute inset-0 bg-grid opacity-30" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(123,223,246,0.16),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(246,171,200,0.16),transparent_32%)]" />
 
-      <div className="relative grid gap-6 lg:grid-cols-[1.12fr_0.88fr] lg:items-stretch 2xl:gap-7 2xl:grid-cols-[1.18fr_0.92fr]">
-        <div className="flex flex-col justify-between">
+      <div className="relative grid gap-6 lg:grid-cols-[1.12fr_0.88fr] lg:items-start 2xl:gap-7 2xl:grid-cols-[1.18fr_0.92fr]">
+        {/* Columna izquierda: logo, tarjetas Flujo + Cuenta, botones. */}
+        <div className="flex flex-col gap-4 lg:gap-5">
           <div>
             <div className="mb-5 flex items-center gap-4">
               <BrandBadge missing={brandMissing} onMissing={() => setBrandMissing(true)} />
@@ -188,7 +207,54 @@ export default function Header({
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          {/* Bloque de ayuda del Asistente: SIEMPRE abierto, sin colapso, para
+              que la altura del card del Header sea estable y predecible
+              (nada de "saltos" cuando la usuaria hace foco o recibe output). */}
+          <div className="overflow-hidden rounded-2xl border border-cyan/15 bg-cyan/[0.04]">
+            <div className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-200">
+              <Info className="h-4 w-4 text-cyan" />
+              <span>Como usar Skelly te asiste</span>
+            </div>
+            <div className="space-y-3 border-t border-cyan/15 px-4 py-4 text-[13px] leading-6 text-slate-300">
+              <p>
+                Escribi una sola linea en lenguaje natural contandonos que
+                examen queres informar (ej: <span className="font-mono text-cyan">eco abdomen esteatosis</span>)
+                y Skelly elige la plantilla mas adecuada entre las que conoce
+                y redacta el informe listo para copiar y pegar.
+              </p>
+              <p>
+                Tambien podes dictarselo a Skelly con el microfono: el
+                boton de dictado aparece al lado del boton de enviar.
+              </p>
+              <p>
+                Si el caso tiene varios hallazgos posibles (por ejemplo
+                diferentes estados de la vesicula) y el dato es
+                indispensable, Skelly te va a hacer una sola pregunta breve
+                antes de redactar.
+              </p>
+              <div>
+                <p className="font-semibold text-white">Como aprende Skelly</p>
+                <p className="mt-1">
+                  Debajo del informe aparecen dos botones.{" "}
+                  <span className="font-mono text-cyan">Sirvio tal cual</span>{" "}
+                  confirma que el informe quedo bien y lo guarda como ejemplo
+                  positivo.{" "}
+                  <span className="font-mono text-cyan">Lo retoque y guardo version final</span>{" "}
+                  te deja editar el informe y guarda tu version corregida
+                  para que Skelly aprenda tu estilo en futuros informes.
+                </p>
+              </div>
+              <p className="rounded-xl border border-lavender/20 bg-lavender/[0.06] px-3 py-2 text-[12px] leading-5 text-lavender">
+                <span className="font-semibold">Configuracion:</span> las
+                plantillas, la guia de estilo y los parametros del modelo
+                los maneja el administrador de la aplicacion (owner). Si
+                necesitas un cambio (nueva plantilla, ajuste de formato,
+                conocimiento nuevo) avisale a el.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 pt-1">
             {editUnlocked ? (
               <>
                 <button
@@ -228,58 +294,55 @@ export default function Header({
           </div>
         </div>
 
+        {/* Columna derecha: Skelly mascota + Asistente vertical angosto (layout original). */}
         <div className="glass-panel relative overflow-hidden rounded-[28px] p-4 2xl:p-5">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(184,181,255,0.16),transparent_40%)]" />
 
           <div className="relative flex h-full flex-col gap-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Skelly</p>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-white">
                   Tu asistente radiologica
                 </h2>
-                <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
-                  Skelly te ayuda a buscar, completar y copiar plantillas sin friccion tecnica.
+                <p className="mt-2 max-w-none text-sm leading-6 text-slate-400">
+                  Tu secretaria con IA: redacta informes por vos, copia plantillas sin friccion
+                  y aprende tu estilo con cada informe que le confirmas o corriges.
                 </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:justify-start sm:gap-3">
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+                    editingEnabled && editUnlocked
+                      ? "bg-emerald-400/10 text-emerald-200"
+                      : "bg-white/5 text-slate-300"
+                  }`}
+                >
+                  {editingEnabled && editUnlocked ? (
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                  ) : (
+                    <Lock className="h-3.5 w-3.5" />
+                  )}
+                  {backendConfigured
+                    ? editingEnabled
+                      ? editUnlocked
+                        ? `Edicion desbloqueada${remainingLabel ? ` - ${remainingLabel}` : ""}`
+                        : "Modo lectura"
+                      : accessState?.label || "Acceso pendiente"
+                    : "Backend pendiente"}
+                </div>
+
                 <button
                   type="button"
                   title="Abre una guia rapida para aprender a usar Skelletary"
                   onClick={onHelpClick}
-                  className="button-secondary group mt-4"
+                  className="button-secondary group sm:min-w-[138px] sm:justify-center"
                 >
                   Skelly te guia
                   <CircleHelp className="h-4 w-4" />
                 </button>
               </div>
-
-              <div
-                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
-                  editingEnabled && editUnlocked
-                    ? "bg-emerald-400/10 text-emerald-200"
-                    : "bg-white/5 text-slate-300"
-                }`}
-              >
-                {editingEnabled && editUnlocked ? (
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                ) : (
-                  <Lock className="h-3.5 w-3.5" />
-                )}
-                {backendConfigured
-                  ? editingEnabled
-                    ? editUnlocked
-                      ? `Edicion desbloqueada${remainingLabel ? ` - ${remainingLabel}` : ""}`
-                      : "Modo lectura"
-                    : accessState?.label || "Acceso pendiente"
-                  : "Backend pendiente"}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <span className="badge-soft">Editar atajos desde la plantilla</span>
-              <span className="badge-soft">Plantillas oficiales editables</span>
-              <span className="badge-soft">Antecedente guiado por defecto</span>
-              <span className="badge-soft">Dictado en campos clave</span>
-              <span className="badge-soft">Todo guardado en la nube</span>
             </div>
 
             <SkellyDashboardMascota
@@ -287,6 +350,14 @@ export default function Header({
               userId={profile?.id || null}
             />
 
+            {/* Asistente: vertical angosto, dentro del card derecho.
+                Mejoras internas (sin dropdown, send flotante, feedback, modo edicion). */}
+            <AssistantPanel
+              profile={profile}
+              hasAccess={hasAssistantAccess && hasSession}
+              onPushToast={onPushToast}
+              onFeedbackRecorded={onFeedbackRecorded}
+            />
           </div>
         </div>
       </div>

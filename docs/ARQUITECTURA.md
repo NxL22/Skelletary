@@ -161,6 +161,299 @@ SKELLETARY_APP_URL=https://skelletary.com    # URL usada por el script
 para que Pages pueda consumirlas. `SUPABASE_SECRET_KEY` (o la legacy
 `SUPABASE_SERVICE_ROLE_KEY`) nunca debe llegar al bundle del frontend.
 
+## Modulo Asistente de informes (Skelly Redactor) — v2
+
+Replica la experiencia del Custom GPT original del owner dentro de
+Skelletary, usando MiniMax como proveedor de LLM. La mascota Skelly queda
+intacta: el modulo Asistente es un panel horizontal full width que vive
+**debajo** del card de la mascota Skelly en el Header.
+
+### Layout del dashboard (v2)
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Logo + titulo   │ Flujo recomendado   │ Skelly mascota   │
+│                 │                     │ (compacta)       │
+│                 │ Cuenta + acceso     │ + cuenta a la izq│
+├──────────────────────────────────────────────────────────┤
+│ 🧠 SKELLY · REDACTOR · Cerebro de Skelly                 │
+├─────────────────────────────┬────────────────────────────┤
+│ MENSAJE PARA SKELLY         │ RESULTADO                  │
+│ [textarea + send flotante]  │ [informe renderizado]      │
+│ 0/2000                 [▶]  │ [👍] [✏️ Retoqué]           │
+└─────────────────────────────┴────────────────────────────┘
+```
+
+- **Fila superior**: logo + tarjetas (Flujo + Cuenta) + Skelly mascota compacta.
+- **Fila inferior full width**: Asistente en modo horizontal (input | output).
+- El hueco del lado izquierdo del layout anterior ya no existe.
+
+### Componentes
+
+- `src/components/AssistantPanel.jsx`: el panel completo, con send flotante
+  en el textarea, botones de feedback (👍 / ✏️) y modo edicion in-place.
+- `src/components/Header.jsx`: integra el panel como fila inferior.
+- `src/lib/assistant.js`: cliente HTTP con dos modos (JSON y SSE).
+- `src/lib/profile.js`: helper para cambiar el `display_name` del usuario.
+
+### Diagrama del sistema completo
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Header.jsx                                                  │
+│   ├─ SkellyDashboardMascota (mascota, intacta, compacta)     │
+│   ├─ AssistantPanel.jsx (nuevo, horizontal full width)      │
+│   │     │                                                   │
+│   │     │ supabase.functions.invoke("assistant-report")      │
+│   │     │ o fetch directo con ReadableStream (SSE)          │
+│   │     ▼                                                   │
+│   └─ SettingsModal.jsx -> nueva ActionCard "Mi perfil"       │
+└──────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Edge Function: supabase/functions/assistant-report/         │
+│   ├─ index.ts     Entry: valida sesion, flags, rate limit,  │
+│   │               streaming SSE opcional (?stream=1)         │
+│   ├─ lib/prompt.js   Arma el system prompt (con ejemplos)    │
+│   ├─ lib/knowledge.js  Lee Storage con cache de 10 min      │
+│   ├─ lib/feedback.js   Lee/escribe feedback del usuario      │
+│   ├─ lib/usage.js   Rate limit 300 envios / 12h             │
+│   ├─ lib/sanitize.js  Limpia + valida el output              │
+│   ├─ lib/llm.js     Cliente MiniMax (max_tokens, temp)       │
+│   └─ lib/feedback.js  SHA256, parsea .md, FIFO 50           │
+└──────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Edge Function: supabase/functions/assistant-feedback/       │
+│   ├─ index.ts     Entry: persiste feedback al bucket         │
+│   └─ lib/feedback.js  (mismo helper que el report)           │
+└──────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Storage buckets privados                                   │
+│   ├─ assistant-knowledge                                     │
+│   │    ├─ guia-estilo.md            (referencia)             │
+│   │    ├─ diccionario-plantillas.md (referencia)             │
+│   │    └─ plantillas-corregidas.md (indizado por codigo)     │
+│   └─ assistant-feedback                                     │
+│        └─ feedback/{user_id}.md (un archivo por usuaria)    │
+└──────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Tablas Supabase                                             │
+│   ├─ profiles.display_name  Editable por usuaria            │
+│   ├─ profiles.has_assistant_access  Flag opt-in por usuaria │
+│   └─ assistant_usage         Contador rate limit             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Validaciones (en orden, falla rapido)
+
+1. **Sesion valida** (`Authorization: Bearer <access_token>`).
+2. **Acceso comercial vigente** (`active` o `trial` no vencido).
+3. **Flag `has_assistant_access = true`** en `profiles`.
+4. **Rate limit**: 300 envios / ventana movil de 12h.
+5. **Validacion de input (defense in depth)**: si el input es muy corto o no
+   contiene ninguna keyword de modalidad (eco, rx, tac, rm, doppler, etc.),
+   se rechaza con `BAD_INPUT` antes de gastar tokens en el LLM.
+
+### Streaming SSE (v2)
+
+Para que Skelly se sienta mas rapido, el Edge Function `assistant-report`
+puede devolver los tokens del LLM conforme llegan. El cliente (UI) usa
+`fetch` directo con `ReadableStream` (no `supabase.functions.invoke` que
+no soporta bien streams).
+
+- Sin stream (`POST /assistant-report`): devuelve JSON completo (compatibilidad).
+- Con stream (`POST /assistant-report?stream=1`): devuelve `text/event-stream`.
+- Cliente activa el stream automaticamente en `AssistantPanel`.
+
+### Sistema de retroalimentacion (v2)
+
+Cada informe editado se guarda en `assistant-feedback/feedback/{user_id}.md`
+como markdown estructurado. Cuando la usuaria pide un nuevo informe, los
+ultimos 10 pares del archivo se inyectan en el system prompt como bloque
+"EJEMPLOS PREVIOS DEL USUARIO" para que el LLM los use como referencia
+de estilo.
+
+**Tres mecanismos para acotar el tamano**:
+- **Deduplicacion por SHA256** del input: no se guarda el mismo input dos veces.
+- **Retencion de ultimos 50**: cada append trunca el archivo.
+- **Trimeo de whitespace**: se normaliza antes de guardar.
+
+Tamano maximo: ~150 KB por usuaria activa. 1 GB de Storage alcanza para
+6.000+ usuarias activas.
+
+### Privacidad
+
+- Los pares feedback son PHI. Se guardan en Storage encriptado de Supabase,
+  detras de RLS por user_id, descargables como backup, faciles de migrar.
+- El system prompt prohibe identificadores de pacientes (nombre, RUT,
+  direccion, telefono). Aun asi, el contenido clinico en si mismo es PHI.
+- La API key del LLM vive solo en secrets del Edge Function.
+
+### Donde vive cada cosa (v2)
+
+| Archivo | Que hace |
+|---|---|
+| `src/components/AssistantPanel.jsx` | UI del Asistente (horizontal) |
+| `src/components/Header.jsx` | Layout del dashboard, monta la mascota + el Asistente |
+| `src/components/SettingsModal.jsx` | ActionCard "Mi perfil" + resto |
+| `src/lib/assistant.js` | Cliente HTTP con SSE |
+| `src/lib/profile.js` | Helper updateDisplayName |
+| `src/lib/assistantSanitize.js` | Defensa adicional en cliente |
+| `supabase/functions/assistant-report/index.ts` | Edge Function principal |
+| `supabase/functions/assistant-report/lib/prompt.js` | System prompt |
+| `supabase/functions/assistant-report/lib/knowledge.js` | Knowledge base |
+| `supabase/functions/assistant-report/lib/feedback.js` | SHA256 + parseo + persistencia |
+| `supabase/functions/assistant-report/lib/usage.js` | Rate limit |
+| `supabase/functions/assistant-report/lib/sanitize.js` | Output cleanup + defense |
+| `supabase/functions/assistant-report/lib/llm.js` | Cliente MiniMax |
+| `supabase/functions/assistant-feedback/index.ts` | Edge Function de feedback |
+| `supabase/migrations/20260704000000_assistant_module.sql` | Migracion inicial |
+| `supabase/migrations/20260705000000_profile_display_name.sql` | Policy + trigger |
+| `scripts/create-user.mjs` | Flag `--ai-access=true` para activar |
+
+### Diagrama
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Header.jsx                                                  │
+│   ├─ SkellyDashboardMascota (mascota, intacta)               │
+│   └─ AssistantPanel.jsx (nuevo, debajo del video)            │
+│        │                                                     │
+│        ▼ supabase.functions.invoke("assistant-report", ...) │
+└──────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Edge Function: supabase/functions/assistant-report/         │
+│   ├─ index.ts     Entry: valida sesion, flags, rate limit    │
+│   ├─ lib/prompt.js   Arma el system prompt (6 bloques)      │
+│   ├─ lib/knowledge.js  Lee Storage con cache de 10 min      │
+│   ├─ lib/usage.js   Rate limit 300 envios / 12h              │
+│   ├─ lib/sanitize.js Quita MD, valida formato, frase sist.  │
+│   └─ lib/llm.js     Cliente MiniMax (formato OpenAI)        │
+└──────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Storage bucket privado: assistant-knowledge                 │
+│   ├─ guia-estilo.md          (siempre en el prompt)         │
+│   ├─ diccionario-plantillas.md (siempre en el prompt)       │
+│   └─ plantillas-corregidas.md (indizado por codigo)         │
+└──────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Tablas Supabase                                             │
+│   ├─ profiles.has_assistant_access  Flag opt-in por usuaria │
+│   └─ assistant_usage                Contador rate limit      │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Validaciones (en orden, falla rapido)
+
+1. **Sesion valida** (`Authorization: Bearer <access_token>`).
+2. **Acceso comercial vigente** (`active` o `trial` no vencido) usando
+   la misma funcion `user_has_app_access` que ya usa el frontend.
+3. **Flag `has_assistant_access = true`** en `profiles`.
+4. **Rate limit**: la usuaria no supero 300 envios en la ventana movil
+   de 12h.
+
+Si cualquiera falla, el Edge Function responde con el codigo HTTP
+apropiado y un mensaje util para que la UI muestre el error con sentido.
+
+### Prompt del sistema
+
+`lib/prompt.js` arma el system prompt en 6 bloques en este orden:
+
+1. Identidad (Skelly redactor de Skelletary).
+2. Formato obligatorio (estructura ANTECEDENTES / HALLAZGOS / IMPRESION,
+   espaciado, frase sistematica condicional).
+3. Reglas clinicas (no inventar, lenguaje prudente, privacidad).
+4. Sintaxis del input ("agrega:", "tambien:", "mas:", etc.).
+5. Como elegir plantilla (match por modalidad + nombre + hallazgos).
+6. Bloques cargados: guia de estilo + diccionario de plantillas +, si
+   la usuaria eligio del dropdown, la plantilla base seleccionada.
+
+El mensaje de la usuaria va como `user` aparte.
+
+### Sanitizacion de salida
+
+`lib/sanitize.js` hace defensa en profundidad sobre la respuesta del LLM:
+
+- Quita code fences, headings markdown, negritas.
+- Quita cualquier texto antes del primer header de seccion valido.
+- Quita cualquier ruido despues de la ultima linea de IMPRESION.
+- Extrae las 3 secciones canonicales y reensambla el informe en el
+  formato exacto exigido por la guia de estilo.
+- Si la plantilla base es de ecografia y la frase sistematica no esta
+  en HALLAZGOS, la inyecta al inicio de esa seccion.
+
+### Knowledge base
+
+Los archivos viven en `supabase/knowledge/` y se suben al bucket privado
+`assistant-knowledge` desde la consola de Supabase:
+
+- `guia-estilo.md` (siempre en el prompt).
+- `diccionario-plantillas.md` (siempre en el prompt).
+- `plantillas-corregidas.md` (NO se inyecta entero: `lib/knowledge.js`
+  lo indexa por codigo de plantilla y solo la seleccionada del dropdown
+  viaja al prompt, ahorrando tokens).
+
+El cache en memoria dura 10 minutos para no leer Storage en cada request.
+
+### Rate limit
+
+Tabla `assistant_usage` lleva `count` y `window_start` por usuaria.
+El Edge Function hace un UPSERT atomico al validar cada request.
+La ventana se resetea automaticamente cuando pasaron 12h desde el primer
+envio de la ventana actual.
+
+### Privacidad
+
+El system prompt prohibe identificadores de pacientes (nombre, RUT,
+direccion, telefono). Aun asi, el contenido clinico en si mismo es PHI:
+queda a criterio del owner si acepta el flujo para su caso de uso.
+Para evitar exposicion, la API key del LLM vive solo en secrets del
+Edge Function, nunca en el bundle del frontend.
+
+### Donde vive cada cosa
+
+| Archivo | Que hace |
+|---|---|
+| `supabase/functions/assistant-report/index.ts` | Entry point de la Edge Function |
+| `supabase/functions/assistant-report/lib/prompt.js` | Arma el system prompt |
+| `supabase/functions/assistant-report/lib/knowledge.js` | Lee Storage con cache |
+| `supabase/functions/assistant-report/lib/usage.js` | Rate limit 300/12h |
+| `supabase/functions/assistant-report/lib/sanitize.js` | Limpia y valida la salida |
+| `supabase/functions/assistant-report/lib/llm.js` | Cliente MiniMax (OpenAI-compatible) |
+| `supabase/migrations/2026*_assistant*.sql` | Migracion idempotente |
+| `supabase/knowledge/*.md` | Origen de la knowledge base |
+| `src/components/AssistantPanel.jsx` | UI del modulo |
+| `src/lib/assistant.js` | Cliente del endpoint |
+| `src/lib/assistantSanitize.js` | Defensa adicional en cliente |
+| `scripts/create-user.mjs` | Flag `--ai-access` para activar por usuaria |
+
+### Variables de entorno de la Edge Function
+
+```env
+SUPABASE_URL=https://....supabase.co        # la URL del proyecto
+SUPABASE_ANON_KEY=eyJh...                   # anon key (publica)
+SUPABASE_SERVICE_ROLE_KEY=...               # service role (solo en backend)
+MINIMAX_API_KEY=...                         # API key del proveedor LLM
+MINIMAX_BASE_URL=https://api.minimax.chat/v1
+MINIMAX_MODEL=MiniMax/M3
+```
+
+Se configuran como secrets del Edge Function (`supabase functions secrets set`).
+Nunca quedan en el bundle del frontend.
+
 ## Como NO documentar
 
 Antes de escribir sobre el modelo comercial, lee el codigo real. Si no

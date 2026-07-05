@@ -1,4 +1,4 @@
-// App.jsx
+﻿// App.jsx
 // ============================================================
 // Orquestador principal de la aplicacion. Vive en la raiz y decide:
 //   1. Si mostrar AuthScreen o el Dashboard segun la sesion.
@@ -30,7 +30,8 @@ import ScrollToTopButton from "./components/ScrollToTopButton";
 import AuthScreen from "./components/AuthScreen";
 import PasswordChangeModal from "./components/PasswordChangeModal";
 import { copyText, playCopyFeedback } from "./lib/clipboard";
-import { resolveAccessState } from "./lib/access";
+import { normalizeProfile, resolveAccessState } from "./lib/access";
+import { submitAssistantFeedback } from "./lib/assistant";
 import {
   AUTH_REDIRECT_MODE,
   clearAuthRedirectModeFromUrl,
@@ -925,6 +926,46 @@ export default function App() {
     setPasswordChangeOpen(false);
   }
 
+  // Handler que se dispara cuando el usuario guarda su nuevo nombre desde
+  // SettingsModal. Refresca el perfil en memoria para que el Header y el resto
+  // de la UI vean el cambio inmediatamente.
+  function handleProfileUpdated(updatedProfile) {
+    if (!updatedProfile) {
+      return;
+    }
+    const normalized = normalizeProfile(updatedProfile);
+    if (normalized) {
+      setProfile(normalized);
+      pushToast("Nombre actualizado.", "success");
+    }
+  }
+
+  // Handler que dispara AssistantPanel cuando el usuario acepta un informe
+  // (positivo o editado). Persiste el feedback al backend en background.
+  async function handleAssistantFeedback(payload) {
+    if (!payload || typeof payload !== "object") {
+      return;
+    }
+    try {
+      const result = await submitAssistantFeedback({
+        originalInput: payload.originalInput,
+        skellyOutput: payload.skellyOutput,
+        humanOutput: payload.humanOutput,
+        templateCode: payload.templateCode ?? null,
+      });
+      if (!result.appended && result.reason === "duplicate") {
+        // Ya tenemos este feedback guardado. No spameamos al usuario con un
+        // error: el comportamiento esperado es idempotente.
+        pushToast("Ya teniamos este feedback guardado.", "info");
+      }
+    } catch (feedbackError) {
+      pushToast(
+        feedbackError?.message || "No pudimos guardar el feedback.",
+        "error",
+      );
+    }
+  }
+
   if (backendConfigured && workspaceLoading) {
     return (
       <>
@@ -971,8 +1012,10 @@ export default function App() {
           accessState={accessState}
           addTemplateDisabled={!addTemplateEnabled}
           backendConfigured={backendConfigured}
+          onFeedbackRecorded={handleAssistantFeedback}
           editUnlocked={editUnlocked}
           editingEnabled={editingEnabled}
+          hasAssistantAccess={Boolean(profile?.hasAssistantAccess)}
           hasSession={Boolean(session?.user?.id)}
           profile={profile}
           skellyIntroToken={skellyIntroToken}
@@ -980,6 +1023,7 @@ export default function App() {
           unlockExpiresAt={unlockExpiresAt}
           onAccountClick={() => setSettingsOpen(true)}
           onHelpClick={() => setHelpOpen(true)}
+          onPushToast={pushToast}
           onUnlockClick={() => setPinMode("unlock")}
           onLockClick={handleLockEdit}
           onNewTemplate={() => openEditor(null)}
@@ -1134,11 +1178,11 @@ export default function App() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-center gap-2 pb-1 text-center text-xs uppercase tracking-[0.18em] text-cyan/85">
-          <span className="footer-heart-shell" aria-hidden="true">
-            <Heart className="footer-heart-icon h-3.5 w-3.5 fill-rose text-rose" />
-          </span>
+        <div className="flex items-center justify-center gap-2 pb-1 text-center text-xs uppercase tracking-[0.18em] text-cyan">
           <span>Hecho con cariño para mi esposa</span>
+          <span className="footer-heart-shell" aria-hidden="true">
+            <Heart className="footer-heart-icon h-3.5 w-3.5 fill-current text-rose" />
+          </span>
         </div>
       </div>
 
@@ -1188,6 +1232,7 @@ export default function App() {
         canManagePassword={Boolean(session?.user?.id)}
         editUnlocked={editUnlocked}
         profile={profile}
+        onProfileUpdated={handleProfileUpdated}
         onOpenChangePin={() => {
           setSettingsOpen(false);
           setPinMode("change");

@@ -22,6 +22,7 @@ La app debe sentirse premium, profesional y extremadamente util para el trabajo 
 - Edicion de plantillas oficiales: permitida desde la app. Al guardar una plantilla oficial se promueve automaticamente a la biblioteca personal del usuario conservando el mismo ID, de modo que el merge en la nube la muestre en el mismo lugar.
 - Importacion: deshabilitada para todos por ahora (sin CSV, sin Excel, sin JSON).
 - Exportacion: deshabilitada para todos por ahora.
+- Modulo Asistente de informes (Skelly Redactor): opt-in por usuaria, flag `has_assistant_access` en `profiles`. Lo activa el owner al crear o actualizar la cuenta con `--ai-access=true`. Por default es `false` para proteger a usuarias existentes.
 - Deploy web: GitHub Pages debe recibir `VITE_APP_URL`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` como secrets del repositorio para no publicar la app en modo local ni fabricar enlaces de auth hacia localhost.
 
 ## Reglas no negociables
@@ -46,7 +47,7 @@ src/
 
   components/
     AuthScreen.jsx                     <- Pantalla de login/invitacion/recuperacion
-    Header.jsx                         <- Cabecera del dashboard (logo, cuenta, Skelly)
+    Header.jsx                         <- Cabecera del dashboard (logo, cuenta, Skelly, Asistente)
     CategorySidebar.jsx                <- Filtros por categoria
     SearchBar.jsx, SearchField.jsx     <- Buscador (patron canonico segun UX rules)
     TemplateCard.jsx                   <- Tarjeta individual de plantilla en el listado
@@ -57,6 +58,7 @@ src/
     PasswordField.jsx, PinModal.jsx,
     PasswordChangeModal.jsx            <- UI de contrasena y PIN
     SkellyDashboardMascota.jsx         <- Mascota animada del dashboard (video, audio, burbuja)
+    AssistantPanel.jsx                 <- Modulo Asistente de informes (debajo del video de Skelly)
     HelpModal.jsx                      <- Guia rapida "Skelly te explica la app"
     SettingsModal.jsx                  <- Configuracion del usuario
     ScrollToTopButton.jsx              <- Boton flotante para volver arriba
@@ -84,9 +86,14 @@ src/
     publicAssets.js                    <- Helper para resolver rutas dentro de /public
     reportFormatting.js                <- Formato del informe final al copiar
     skellyMensajes.js                  <- Selector de mensajes para Skelly (semanal, fallback)
+    assistant.js                       <- Cliente del modulo Asistente (Edge Function)
+    assistantSanitize.js               <- Defensa adicional en cliente para la salida del LLM
 
 supabase/
   schema.sql                           <- Esquema base + RLS (referencia, fuente de verdad en Supabase)
+  migrations/                          <- Migraciones SQL idempotentes para correr en Supabase
+  functions/assistant-report/          <- Edge Function del modulo Asistente (Deno)
+  knowledge/                           <- Knowledge base lista para subir al Storage privado
   email-templates/                     <- Plantillas de correo usadas por Supabase
   README.md                            <- Notas sobre el backend
 
@@ -204,6 +211,44 @@ Si se toca el sistema Skelly (mensajes, audio, sincronia), mantener alineados:
 - `src/components/SkellyDashboardMascota.jsx`
 - `public/audio de skelly/vocabulario/`
 - `docs/SKELLY.md`
+
+## Modulo Asistente de informes (Skelly Redactor)
+
+Resumen ejecutivo. El detalle completo vive en `docs/ARQUITECTURA.md > Modulo Asistente`.
+
+- **Nombre UX**: "Skelly · Redactor" (cerebro de Skelly). El video y audio
+  de Skelly mascota quedan intactos arriba.
+- **Donde vive**: en el Header, debajo del widget de `SkellyDashboardMascota`.
+  Solo se renderiza si `profile.hasAssistantAccess === true` y hay sesion.
+- **Backend**: Edge Function de Supabase en `supabase/functions/assistant-report/`.
+  Recibe input de la usuaria, arma prompt con knowledge base desde Storage,
+  llama al LLM y devuelve texto plano saneado.
+- **Knowledge base**: bucket privado `assistant-knowledge` con tres archivos:
+  `guia-estilo.md`, `diccionario-plantillas.md`, `plantillas-corregidas.md`.
+- **Rate limit**: 300 envios por ventana movil de 12h, por usuaria.
+  Vive en `public.assistant_usage`.
+- **Acceso**: la cuenta debe tener `has_assistant_access=true`,
+  `access_status` en `active` o `trial` no vencido, y sesion valida.
+  El Edge Function valida las tres capas en orden.
+- **Opt-in por usuaria**: el flag lo setea el owner al crear la cuenta
+  con `--ai-access=true`. Por default es `false`.
+- **Privacidad**: el prompt ya prohibe identificadores de pacientes. Aun
+  asi, el contenido clinico es PHI: queda a criterio del owner si lo
+  acepta para su flujo.
+- **NO toca la mascota Skelly**: el texto, audio y video de Skelly se
+  mantienen intactos. Solo se agrega un panel nuevo abajo.
+
+Si se toca el modulo Asistente, mantener alineados:
+
+- `supabase/functions/assistant-report/` (Edge Function + lib)
+- `supabase/migrations/2026*_assistant*.sql`
+- `supabase/schema.sql`
+- `supabase/knowledge/` (origen de los archivos que se suben a Storage)
+- `src/components/AssistantPanel.jsx`
+- `src/lib/assistant.js` y `src/lib/assistantSanitize.js`
+- `src/lib/access.js` (campo `hasAssistantAccess` en `normalizeProfile`)
+- `scripts/create-user.mjs` (flag `--ai-access`)
+- `docs/ALTA-DE-USUARIOS.md`, `docs/GUIA-HUMANA.md`, `docs/ARQUITECTURA.md`
 
 ## Comandos
 

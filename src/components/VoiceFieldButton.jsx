@@ -1,4 +1,4 @@
-import { Mic, Square } from "lucide-react";
+﻿import { Mic, Square } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createSpeechRecognition,
@@ -189,7 +189,7 @@ export default function VoiceFieldButton({
       title={resolvedTitle}
       className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${
         isListening
-          ? "border-cyan/40 bg-cyan/15 text-cyan shadow-[0_0_0_4px_rgba(34,211,238,0.08)]"
+          ? "border-cyan/40 bg-cyan/15 text-cyan shadow-[0_0_0_4px_rgba(79,209,197,0.08)]"
           : "border-white/10 bg-white/5 text-slate-300 hover:border-cyan/30 hover:bg-cyan/10 hover:text-cyan"
       } ${className}`}
     >
