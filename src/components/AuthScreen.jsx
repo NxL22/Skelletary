@@ -1,4 +1,4 @@
-﻿// AuthScreen.jsx
+// AuthScreen.jsx
 // ============================================================
 // Pantalla de acceso. Maneja tres modos segun el `auth_mode` de la URL:
 //   - login: usuario entra con email + contrasena.
@@ -137,11 +137,11 @@ function InlineFeedback({ tone, children }) {
   const toneMap = {
     success: {
       icon: CheckCircle2,
-      className: "border-emerald-400/20 bg-emerald-400/10 text-emerald-400",
+      className: "border-emerald-400/20 bg-emerald-400/10 text-emerald-50",
     },
     error: {
       icon: AlertTriangle,
-      className: "border-rose/30 bg-rose/10 text-rose",
+      className: "border-rose/30 bg-rose/10 text-rose-50",
     },
     info: {
       icon: Mail,
@@ -336,15 +336,15 @@ export default function AuthScreen({
       <div className="login-shell relative mx-auto flex min-h-[100svh] w-full max-w-[1240px] items-center justify-center px-4 py-6 sm:px-6 lg:px-10">
         <div className="login-desktop-scale relative w-full max-w-[460px] md:max-w-[34.5rem]">
           <div className="login-card px-6 pb-[calc(1.5rem+1em)] pt-6 sm:px-9 sm:pb-[calc(2.25rem+0.5em)] sm:pt-9 md:px-10 md:pb-8 md:pt-8">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan/40 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
             <div className="flex items-start gap-4">
               <LoginBrandBadge />
 
               <div className="pt-1">
-                <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan">
-                  <span className="h-2 w-2 rounded-full bg-cyan shadow-[0_0_18px_rgba(79,209,197,0.85)]" />
+                <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan/95">
+                  <span className="login-status-led h-2 w-2 rounded-full bg-cyan" />
                   {getStatusLabel({ accessState, authMode, hasSession, loading })}
                 </span>
                 <p className="mt-3 font-display text-[2rem] font-semibold leading-none tracking-[-0.03em] text-white">

@@ -29,6 +29,12 @@ body {
   background: rgba(184, 181, 255, 0.35);
 }
 
+input,
+textarea,
+[contenteditable] {
+  caret-color: #7BDEF5;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -563,6 +569,22 @@ body {
 
 .login-blob-delay-2 {
   animation-delay: -12s;
+}
+
+/* LED status dot pulse — azul cyan */
+.login-status-led {
+  animation: login-status-led 2.4s ease-in-out infinite;
+}
+
+@keyframes login-status-led {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(54, 214, 222, 0.9), 0 0 18px rgba(54, 214, 222, 0.5);
+  }
+  50% {
+    opacity: 0.3;
+    box-shadow: 0 0 3px rgba(54, 214, 222, 0.35), 0 0 8px rgba(54, 214, 222, 0.15);
+  }
 }
 
 @media (min-width: 768px) {
