@@ -342,11 +342,16 @@ Las mismas que tu Custom GPT original:
 
 - El prompt prohibe que la IA incluya nombres, RUT u otros
   identificadores de pacientes.
-- Los pares de feedback se guardan en el bucket privado
-  `assistant-feedback/feedback/{tu_user_id}.md` como markdown
-  descargable. Cada par pesa ~3 KB; el sistema retiene los ultimos 50
-  pares por usuaria (tope ~150 KB).
-- El contenido clinico se envia al proveedor de IA (Mavis / MiniMax).
+- El feedback se registra como triplete versionado en las tablas privadas
+  `assistant_feedback_triplets` y `assistant_memories`. El archivo Markdown
+  del bucket queda solamente como respaldo compatible.
+- Antes de guardar, el backend detecta posibles identificadores y bloquea el
+  aprendizaje si encuentra nombres, RUT, correos, telefonos o fichas.
+- Las medidas, unidades, volumenes y otros valores del caso se convierten en
+  variables antes de generalizar una memoria; no se reutilizan como datos
+  fijos para otro paciente.
+- El contenido clinico se envia al proveedor MiniMax configurado en los
+  secrets de Supabase.
   Si en algun momento necesitas guardar evidencia formal de que no se
   filtra PHI, hay que evaluar el proveedor y eventualmente firmar un
   acuerdo (BAA o equivalente).
@@ -364,6 +369,88 @@ Las mismas que tu Custom GPT original:
 | "Tu acceso no esta vigente" | Cuenta `expired` o `trial` vencido | Renovar acceso desde el script |
 | El streaming queda colgado | Timeout del backend o de la red | Esperar 65s al reintento automatico, o recargar la pagina |
 | Salida con markdown o sin secciones | Caso raro del LLM | Reportar al owner con el input exacto |
+
+## Aprendizaje automatico continuo y KOG
+
+El sistema conserva el RAG y las reglas existentes, pero ahora los complementa
+con un KOG ligero: conocimiento estructurado sobre plantillas, modalidad,
+anatomia, hallazgos, variantes y variables.
+
+Cada feedback validado produce aprendizaje automatico:
+
+- **Sirvio tal cual**: refuerza la salida que genero Skelly.
+- **Guardar version final**: registra la entrada, la salida original y la
+  correccion humana.
+- Una memoria nueva se activa inmediatamente solo para casos muy parecidos.
+- Las confirmaciones repetidas aumentan su confianza y alcance.
+- Las correcciones contradictorias reducen confianza o mandan la memoria a
+  cuarentena; no se sobrescribe el historial silenciosamente.
+- El aprendizaje es colectivo, con una pequena preferencia por el estilo de la
+  usuaria actual.
+
+No hace falta crear migraciones por cada aprendizaje. La migracion inicial
+`20260715000000_assistant_continuous_learning.sql` crea la infraestructura y
+los siguientes feedbacks se guardan como datos normales.
+
+## Panel privado de Skelly Lab
+
+La ruta exacta del panel es:
+
+**Produccion:** `https://skelletary.com/#/skelly-lab`
+
+**Desarrollo:** `http://localhost:5173/#/skelly-lab`
+
+El panel requiere una sesion normal de Skelletary y luego el PIN privado. El
+PIN se configura con la variable `ASSISTANT_ADMIN_PIN` como secret de la Edge
+Function `assistant-admin`; nunca debe tener prefijo `VITE_` ni escribirse en
+el repositorio.
+
+Skelly Lab no aprueba manualmente cada aprendizaje. Sirve para:
+
+- revisar cantidad de feedback, memorias, confianza y conflictos;
+- activar o desactivar memorias;
+- revertir una memoria a una version anterior;
+- observar el estado general del aprendizaje.
+
+La ruta usa hash porque GitHub Pages no procesa rutas del servidor. Si el panel
+parece quedarse abierto al volver, usar el enlace **Volver a Skelletary**, que
+navega a la ruta base real.
+
+## Conexion MCP de Supabase
+
+El proyecto contiene `.mcp.json` con el servidor oficial de Supabase limitado
+al proyecto de Skelletary. Para que Codex muestre sus herramientas:
+
+1. Abre el proyecto desde la raiz del repositorio.
+2. Recarga o reinicia Codex.
+3. Completa la autenticacion OAuth de Supabase en el navegador cuando la pida.
+4. Comprueba las herramientas desde el comando `/mcp`.
+
+La conexion MCP permite consultar y administrar el proyecto autorizado, pero no
+debe usarse para conectar datos de produccion con informacion identificable de
+pacientes. Para el despliegue repetible del repositorio se mantiene tambien la
+CLI de Supabase.
+
+## Despliegue y sincronizacion tecnica
+
+Pruebas y build local:
+
+```bash
+npm.cmd test
+npm.cmd run build
+```
+
+Sincronizar la copia privada de las plantillas oficiales:
+
+```bash
+npm.cmd run assistant:sync
+```
+
+El origen oficial sigue siendo `src/data/defaultTemplates.json`; la copia
+privada `assistant_ai_templates` siempre se actualiza en una sola direccion.
+
+El workflow de GitHub Pages se ejecuta al hacer push a `main` y necesita los
+secrets `VITE_APP_URL`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
 
 ## Tu nombre visible (editable)
 
