@@ -1,4 +1,5 @@
 ﻿import { Copy, Heart, Sparkles, Star } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import {
   DISPLAY_SHORTCUT_MAX_LENGTH,
   getTemplateCardHeading,
@@ -107,6 +108,7 @@ export default function TemplateCard({
   onOpen,
   onCopy,
   onToggleFavorite,
+  onDelete,
 }) {
   const variables = extractVariables(template.content);
   const variableCount = variables.length;
@@ -235,6 +237,21 @@ className="mt-1 text-sm leading-5 text-slate-400"
         <div className="flex flex-wrap gap-2 text-xs text-slate-400">
           <span>{template.copyCount} copias</span>
           <span>Actualizada {formatUpdated(template.updatedAt)}</span>
+          {template.isUserOwned ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete?.(template);
+              }}
+              className="inline-flex items-center gap-1 rounded-full border border-rose/20 px-2 py-1 text-rose/80 transition hover:border-rose/50 hover:bg-rose/10 hover:text-rose"
+              aria-label={`Eliminar plantilla ${template.title}`}
+              title="Eliminar plantilla personal"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Eliminar
+            </button>
+          ) : null}
         </div>
 
         <button

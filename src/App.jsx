@@ -1138,6 +1138,7 @@ export default function App() {
                         onOpen={openTemplate}
                         onCopy={handleCopy}
                         onToggleFavorite={handleToggleFavorite}
+                        onDelete={handleDelete}
                       />
                     </div>
                   ))}
