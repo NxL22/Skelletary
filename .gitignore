@@ -10,3 +10,12 @@ dist
 # Contiene project ref, versiones de servicios y URL del pooler. No es
 # codigo fuente y no debe ir al repo.
 supabase/.temp/
+
+# Documentacion privada del owner: permanece en la maquina local y no se
+# publica en GitHub. La knowledge base y las plantillas de correo de Supabase
+# quedan versionadas porque forman parte del funcionamiento de la app.
+/docs/
+/README.md
+/AGENTS.md
+/supabase/README.md
+/scripts/analisis-plantillas.txt
