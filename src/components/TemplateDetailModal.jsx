@@ -319,18 +319,16 @@ export default function TemplateDetailModal({
             </button>
 
             {editUnlocked ? (
-              <>
-                <button type="button" onClick={() => onEdit(template)} className="button-secondary">
-                  <Pencil className="h-4 w-4" />
-                  Editar plantilla
-                </button>
-                {template.isUserOwned ? (
-                  <button type="button" onClick={() => onDelete(template)} className="button-danger">
-                    <Trash2 className="h-4 w-4" />
-                    Eliminar
-                  </button>
-                ) : null}
-              </>
+              <button type="button" onClick={() => onEdit(template)} className="button-secondary">
+                <Pencil className="h-4 w-4" />
+                Editar plantilla
+              </button>
+            ) : null}
+            {template.isUserOwned ? (
+              <button type="button" onClick={() => onDelete(template)} className="button-danger">
+                <Trash2 className="h-4 w-4" />
+                Eliminar
+              </button>
             ) : null}
           </div>
 

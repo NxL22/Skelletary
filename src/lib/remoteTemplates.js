@@ -184,14 +184,11 @@ export async function deleteUserTemplateRemote(templateId) {
     throw new Error("Supabase no esta configurado.");
   }
 
-  // Solo borramos en user_templates. Si la plantilla es oficial y nunca fue
-  // editada, no habra fila ahi y la oficial seguira visible desde core_templates.
-  const { error: templateError } = await supabase.from("user_templates").delete().eq("id", templateId);
-  const { error: statsError } = await supabase.from("user_template_stats").delete().eq("template_id", templateId);
-
-  if (templateError || statsError) {
-    throw templateError || statsError;
-  }
+  const response = await supabase.functions.invoke("template-delete", {
+    body: { templateId },
+  });
+  if (response.error) throw response.error;
+  if (!response.data?.deleted) throw new Error("No pudimos eliminar la plantilla personal.");
 }
 
 export async function upsertTemplateStatsRemote(userId, template, changes) {
