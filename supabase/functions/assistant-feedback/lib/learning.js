@@ -51,6 +51,17 @@ export function correctionSummary(skellyOutput, approvedOutput) {
   };
 }
 
+export function hasValidReportStructure(value) {
+  const normalized = String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+  const antecedentes = normalized.indexOf("ANTECEDENTES CLINICOS:");
+  const hallazgos = normalized.indexOf("HALLAZGOS:");
+  const impresion = normalized.indexOf("IMPRESION:");
+  return antecedentes >= 0 && hallazgos > antecedentes && impresion > hallazgos;
+}
+
 export async function sha256Hex(text) {
   const bytes = new TextEncoder().encode(String(text));
   const digest = await crypto.subtle.digest("SHA-256", bytes);

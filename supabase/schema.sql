@@ -312,7 +312,9 @@ create table if not exists public.assistant_feedback_triplets (
 
 create table if not exists public.assistant_memories (
   id uuid primary key default gen_random_uuid(),
-  signature text not null unique,
+  user_id uuid references auth.users(id) on delete cascade,
+  scope text not null default 'personal' check (scope in ('personal', 'global')),
+  signature text not null,
   template_code text,
   generalized_input text not null,
   generalized_output text not null,
@@ -375,6 +377,80 @@ create table if not exists public.assistant_audit_log (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.assistant_eval_runs (
+  id uuid primary key default gen_random_uuid(),
+  model text not null,
+  prompt_version text not null,
+  status text not null default 'running' check (status in ('running', 'completed', 'failed')),
+  metrics jsonb not null default '{}'::jsonb,
+  started_at timestamptz not null default timezone('utc', now()),
+  completed_at timestamptz
+);
+
+create table if not exists public.assistant_eval_results (
+  id bigint generated always as identity primary key,
+  run_id uuid not null references public.assistant_eval_runs(id) on delete cascade,
+  case_key text not null,
+  input text not null,
+  expected_rules jsonb not null default '{}'::jsonb,
+  output text,
+  passed boolean,
+  latency_ms integer,
+  detail jsonb not null default '{}'::jsonb
+);
+
+create unique index if not exists assistant_memories_personal_signature_idx
+  on public.assistant_memories(user_id, signature)
+  where scope = 'personal' and user_id is not null;
+create unique index if not exists assistant_memories_global_signature_idx
+  on public.assistant_memories(signature)
+  where scope = 'global';
+create index if not exists assistant_memories_user_status_idx
+  on public.assistant_memories(user_id, status, confidence desc, updated_at desc);
+
+-- La forma de retorno incluye el alcance de la memoria. Si el esquema se
+-- aplica sobre una base que ya tenia la funcion antigua, hay que eliminarla
+-- antes porque PostgreSQL no permite cambiar columnas OUT con replace.
+drop function if exists public.match_assistant_memories(
+  extensions.vector,
+  uuid,
+  text,
+  integer
+);
+
+create function public.match_assistant_memories(
+  query_embedding extensions.vector(384),
+  requesting_user_id uuid,
+  requested_template_code text default null,
+  match_count integer default 3
+)
+returns table (
+  id uuid, generalized_input text, generalized_output text,
+  confidence numeric, support_count integer, similarity double precision,
+  personal_support boolean, memory_scope text
+)
+language sql stable security definer set search_path = public, extensions as $$
+  select memory.id, memory.generalized_input, memory.generalized_output,
+    memory.confidence, memory.support_count,
+    1 - (memory.embedding <=> query_embedding) as similarity,
+    memory.scope = 'personal' and memory.user_id = requesting_user_id as personal_support,
+    memory.scope as memory_scope
+  from public.assistant_memories memory
+  where memory.status = 'active' and memory.embedding is not null
+    and ((memory.scope = 'personal' and memory.user_id = requesting_user_id) or memory.scope = 'global')
+    and (requested_template_code is null or memory.template_code = requested_template_code)
+    and (1 - (memory.embedding <=> query_embedding)) >=
+      case when memory.support_count <= 1 then 0.93 when memory.support_count = 2 then 0.88 else 0.82 end
+  order by (memory.scope = 'personal' and memory.user_id = requesting_user_id) desc,
+    (1 - (memory.embedding <=> query_embedding)) desc, memory.confidence desc
+  limit least(greatest(match_count, 1), 3);
+$$;
+
+revoke all on function public.match_assistant_memories(extensions.vector, uuid, text, integer)
+  from public, anon, authenticated;
+grant execute on function public.match_assistant_memories(extensions.vector, uuid, text, integer)
+  to service_role;
+
 alter table public.assistant_feedback_triplets enable row level security;
 alter table public.assistant_memories enable row level security;
 alter table public.assistant_memory_versions enable row level security;
@@ -382,3 +458,5 @@ alter table public.assistant_ai_templates enable row level security;
 alter table public.assistant_admin_sessions enable row level security;
 alter table public.assistant_admin_attempts enable row level security;
 alter table public.assistant_audit_log enable row level security;
+alter table public.assistant_eval_runs enable row level security;
+alter table public.assistant_eval_results enable row level security;

@@ -181,12 +181,18 @@ export async function invokeAssistant({ input, templateCode = null }) {
   }
 
   return {
+    status: data.status ?? (data.question ? "question" : "report"),
     text: data.text ?? "",
     question: typeof data.question === "string" ? data.question : null,
     warnings: Array.isArray(data.warnings) ? data.warnings : [],
     usage: data.usage ?? null,
     isFallback: Boolean(data.isFallback),
     timings: data.timings ?? null,
+    requestId: data.requestId ?? null,
+    selectedTemplateId: data.selectedTemplateId ?? null,
+    promptVersion: data.promptVersion ?? null,
+    model: data.model ?? null,
+    route: data.route ?? null,
   };
 }
 
@@ -245,6 +251,12 @@ export async function invokeAssistantStream({
       signal,
     });
   } catch (networkError) {
+    if (signal?.aborted) {
+      throw new AssistantError(
+        "TIMEOUT",
+        "Skelly tardo demasiado. Puedes intentarlo de nuevo.",
+      );
+    }
     throw new AssistantError(
       "NETWORK",
       "No pudimos contactar al asistente. Revisa tu conexion.",
@@ -280,6 +292,12 @@ export async function invokeAssistantStream({
   let question = null;
   let isFallback = false;
   let timings = null;
+  let status = null;
+  let requestId = null;
+  let selectedTemplateId = null;
+  let promptVersion = null;
+  let model = null;
+  let route = null;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -310,9 +328,10 @@ export async function invokeAssistantStream({
         continue;
       }
 
-      if (parsed?.type === "start" && parsed.usage) {
+      if (parsed?.type === "start") {
         usage = parsed.usage;
         onStart?.(usage);
+        requestId = parsed.requestId ?? requestId;
         continue;
       }
 
@@ -328,41 +347,53 @@ export async function invokeAssistantStream({
       }
 
       if (parsed?.type === "done") {
+        status = parsed.status ?? (parsed.question ? "question" : "report");
         finalText = parsed.text ?? "";
         question = typeof parsed.question === "string" ? parsed.question : null;
         warnings = Array.isArray(parsed.warnings) ? parsed.warnings : [];
         isFallback = Boolean(parsed.isFallback);
         timings = parsed.timings ?? null;
+        requestId = parsed.requestId ?? requestId;
+        selectedTemplateId = parsed.selectedTemplateId ?? null;
+        promptVersion = parsed.promptVersion ?? null;
+        model = parsed.model ?? null;
+        route = parsed.route ?? null;
         continue;
       }
 
       if (parsed?.type === "error") {
         throw new AssistantError(
-          "SERVER",
+          parsed.code || "SERVER",
           parsed.error || "El asistente tuvo un problema durante el stream.",
         );
       }
     }
   }
 
-  // Si por alguna razon no llego el evento `done` (stream cortado), usamos
-  // el acumulado como fallback.
-  if (!finalText && accumulated) {
-    finalText = accumulated;
+  // Un stream cortado no es un informe. Mostrar el acumulado podria exponer
+  // razonamiento o un texto clinico incompleto.
+  if (!status && !question) {
+    throw new AssistantError("EMPTY", "La respuesta se interrumpio antes de terminar. Intenta de nuevo.");
   }
 
   return {
+    status,
     text: finalText,
     question,
     warnings,
     usage,
     isFallback,
     timings,
+    requestId,
+    selectedTemplateId,
+    promptVersion,
+    model,
+    route,
   };
 }
 
 // =====================================================================
-// submitAssistantFeedback: persiste feedback al bucket del usuario
+// submitAssistantFeedback: persiste feedback y aprendizaje personal
 // =====================================================================
 
 export async function submitAssistantFeedback({
@@ -370,6 +401,8 @@ export async function submitAssistantFeedback({
   skellyOutput,
   humanOutput,
   templateCode = null,
+  promptVersion = null,
+  model = null,
 }) {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -383,7 +416,7 @@ export async function submitAssistantFeedback({
   let error;
   try {
     const response = await supabase.functions.invoke(FEEDBACK_ENDPOINT, {
-      body: { originalInput, skellyOutput, humanOutput, templateCode },
+      body: { originalInput, skellyOutput, humanOutput, templateCode, promptVersion, model },
     });
     data = response?.data;
     error = response?.error;

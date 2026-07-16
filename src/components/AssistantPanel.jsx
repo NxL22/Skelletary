@@ -8,13 +8,13 @@
 //   2. Al apretar Enter (sin Shift) o el boton send flotante, se llama al Edge Function.
 //   3. La respuesta se sanitiza y se muestra en el output de la derecha (modo lectura).
 //   4. Debajo del output hay dos botones de feedback:
-//      - "Sirvio tal cual, guardar": feedback positivo (sin edicion).
-//      - "Lo retoque y guardo version final": abre modo edicion in-place.
+//      - "Sirvió tal cual, guardar": feedback positivo (sin edicion).
+//      - "Lo retoqué y guardo versión final": abre modo edicion in-place.
 //   5. En modo edicion el output se vuelve un textarea editable. Al guardar se
 //      persiste el par (input -> informe final) para que Skelly aprenda.
 //
 // Sprint 2: layout horizontal, sin dropdown de plantilla, send flotante,
-//           botones feedback (UI), modo edicion. Persistencia llega en Sprint 3.
+//           botones feedback con confirmacion real del backend y modo edicion.
 //
 // Lo que NO hace:
 //   - No toca a Skelly mascota (esa sigue intacta arriba).
@@ -87,9 +87,16 @@ export default function AssistantPanel({
   // Feedback pendiente de confirmacion (se setea cuando el usuario apreta un boton).
   // El padre (App.jsx o el Sprint 3) lo recibe via onFeedbackRecorded.
   const [lastSubmittedFeedback, setLastSubmittedFeedback] = useState(null);
+  const [feedbackSaving, setFeedbackSaving] = useState(false);
+  const [feedbackSaved, setFeedbackSaved] = useState(false);
+  const [generationMeta, setGenerationMeta] = useState(null);
+  const [reportReady, setReportReady] = useState(false);
 
   const inputRef = useRef(null);
   const outputRef = useRef(null);
+  const requestSequenceRef = useRef(0);
+  const abortControllerRef = useRef(null);
+  const feedbackSavingRef = useRef(false);
 
   // Reseteo el toast del "copiado" despues de un rato.
   useEffect(() => {
@@ -100,15 +107,21 @@ export default function AssistantPanel({
     return () => window.clearTimeout(timeoutId);
   }, [copied]);
 
-  // Timeout duro por si el LLM se cuelga: soltamos el estado "cargando" para
-  // permitir reintento. El backend tiene su propio timeout.
+  // Timeout real: abortamos la conexion. Solo cambiar el estado visual dejaba
+  // una respuesta vieja viva y podia sobrescribir un reintento posterior.
   useEffect(() => {
     if (!submitting) {
       return undefined;
     }
-    const timeoutId = window.setTimeout(() => setSubmitting(false), 65_000);
+    const timeoutId = window.setTimeout(() => {
+      abortControllerRef.current?.abort();
+    }, 70_000);
     return () => window.clearTimeout(timeoutId);
   }, [submitting]);
+
+  useEffect(() => () => {
+    abortControllerRef.current?.abort();
+  }, []);
 
   function handleSubmit(event) {
     event?.preventDefault?.();
@@ -128,11 +141,18 @@ export default function AssistantPanel({
     // Si hay una pregunta pendiente del turno anterior, lo que la usuaria
     // escribio en el textarea principal ES la respuesta a esa pregunta.
     // Guardamos el input original para concatenar en el futuro si hace falta.
-    const textToSend = trimmed;
+    const textToSend = pendingQuestion && originalInput
+      ? `${originalInput}\nRespuesta a la aclaracion: ${trimmed}`
+      : trimmed;
     const baseOriginal = pendingQuestion && originalInput
       ? originalInput
       : trimmed;
 
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const requestSequence = requestSequenceRef.current + 1;
+    requestSequenceRef.current = requestSequence;
     setSubmitting(true);
     setError(null);
     setIsEditingOutput(false);
@@ -145,6 +165,10 @@ export default function AssistantPanel({
         : trimmed,
     );
     setIsFallback(false);
+    setFeedbackSaved(false);
+    setLastSubmittedFeedback(null);
+    setGenerationMeta(null);
+    setReportReady(false);
 
     // Mientras el LLM esta pensando NO mostramos el texto crudo del stream.
     // Solo mostraremos el output cuando llegue el evento `done` con el texto
@@ -152,14 +176,19 @@ export default function AssistantPanel({
     invokeAssistantStream({
       input: textToSend,
       onStart: (initialUsage) => {
+        if (requestSequence !== requestSequenceRef.current) return;
         if (initialUsage) {
           setUsage(initialUsage);
         }
       },
       onDelta: () => {},
-      onPreview: (safePreview) => setOutput(safePreview),
+      onPreview: (safePreview) => {
+        if (requestSequence === requestSequenceRef.current) setOutput(safePreview);
+      },
+      signal: controller.signal,
     })
       .then((result) => {
+        if (requestSequence !== requestSequenceRef.current) return;
         // Si el LLM devolvio una pregunta breve, mostramos la pregunta
         // y dejamos a la usuaria responder. Si devolvio el informe, lo
         // mostramos como siempre.
@@ -169,6 +198,7 @@ export default function AssistantPanel({
           setOriginalInput(baseOriginal);
           setInput("");
           setSubmitting(false);
+          setReportReady(false);
           requestAnimationFrame(() => {
             outputRef.current?.scrollIntoView({
               behavior: "smooth",
@@ -182,6 +212,14 @@ export default function AssistantPanel({
         setWarnings(result.warnings ?? []);
         setUsage(result.usage ?? null);
         setIsFallback(Boolean(result.isFallback));
+        setGenerationMeta({
+          requestId: result.requestId,
+          selectedTemplateId: result.selectedTemplateId,
+          promptVersion: result.promptVersion,
+          model: result.model,
+          route: result.route,
+        });
+        setReportReady(result.status === "report" && Boolean(finalText));
         setPendingQuestion(null);
         setOriginalInput("");
         setSubmitting(false);
@@ -193,7 +231,13 @@ export default function AssistantPanel({
         });
       })
       .catch((caught) => {
+        if (requestSequence !== requestSequenceRef.current) return;
         setSubmitting(false);
+        setReportReady(false);
+        if (caught?.name === "AbortError") {
+          setError({ code: "TIMEOUT", message: "Skelly tardo demasiado. Puedes intentarlo de nuevo." });
+          return;
+        }
         const classified = classifyError(caught);
         setError(classified);
         if (onPushToast && classified?.code === "RATE_LIMITED") {
@@ -229,6 +273,8 @@ export default function AssistantPanel({
   }
 
   function handleClear() {
+    abortControllerRef.current?.abort();
+    requestSequenceRef.current += 1;
     setInput("");
     setOutput("");
     setWarnings([]);
@@ -240,23 +286,41 @@ export default function AssistantPanel({
     setOriginalInput("");
     setLastRequestInput("");
     setIsFallback(false);
+    setFeedbackSaving(false);
+    feedbackSavingRef.current = false;
+    setFeedbackSaved(false);
+    setGenerationMeta(null);
+    setReportReady(false);
     inputRef.current?.focus();
   }
 
-  // ===== FEEDBACK (Sprint 2: UI y emision. Sprint 3: persistencia real). =====
+  // El ref cierra la ventana entre el click y el siguiente render de React.
+  // Asi dos clicks rapidos nunca crean dos aprendizajes.
 
-  function handleFeedbackPositive() {
+  async function handleFeedbackPositive() {
+    if (feedbackSavingRef.current || feedbackSaved) return;
     // El output quedo tal cual Skelly lo entrego. Es un feedback positivo.
     const payload = {
       type: "positive",
       originalInput: lastRequestInput,
       skellyOutput: output,
       humanOutput: output,
+      templateCode: generationMeta?.selectedTemplateId ?? null,
+      promptVersion: generationMeta?.promptVersion ?? null,
+      model: generationMeta?.model ?? null,
     };
-    setLastSubmittedFeedback(payload);
-    onFeedbackRecorded?.(payload);
-    if (onPushToast) {
-      onPushToast("Guardamos tu feedback. Skelly aprende.", "success");
+    feedbackSavingRef.current = true;
+    setFeedbackSaving(true);
+    try {
+      await onFeedbackRecorded?.(payload);
+      setLastSubmittedFeedback(payload);
+      setFeedbackSaved(true);
+      onPushToast?.("Guardamos tu feedback. Skelly aprende.", "success");
+    } catch (feedbackError) {
+      onPushToast?.(feedbackError?.message || "No pudimos guardar el feedback.", "error");
+    } finally {
+      feedbackSavingRef.current = false;
+      setFeedbackSaving(false);
     }
   }
 
@@ -270,7 +334,8 @@ export default function AssistantPanel({
     setEditedOutput("");
   }
 
-  function handleSaveEdit() {
+  async function handleSaveEdit() {
+    if (feedbackSavingRef.current || feedbackSaved) return;
     const cleaned = editedOutput.trim();
     if (!cleaned) {
       if (onPushToast) {
@@ -283,13 +348,24 @@ export default function AssistantPanel({
       originalInput: lastRequestInput,
       skellyOutput: output,
       humanOutput: cleaned,
+      templateCode: generationMeta?.selectedTemplateId ?? null,
+      promptVersion: generationMeta?.promptVersion ?? null,
+      model: generationMeta?.model ?? null,
     };
-    setOutput(cleaned);
-    setIsEditingOutput(false);
-    setLastSubmittedFeedback(payload);
-    onFeedbackRecorded?.(payload);
-    if (onPushToast) {
-      onPushToast("Guardamos tu version. Skelly aprende.", "success");
+    feedbackSavingRef.current = true;
+    setFeedbackSaving(true);
+    try {
+      await onFeedbackRecorded?.(payload);
+      setOutput(cleaned);
+      setIsEditingOutput(false);
+      setLastSubmittedFeedback(payload);
+      setFeedbackSaved(true);
+      onPushToast?.("Guardamos tu version. Skelly aprende.", "success");
+    } catch (feedbackError) {
+      onPushToast?.(feedbackError?.message || "No pudimos guardar tu version.", "error");
+    } finally {
+      feedbackSavingRef.current = false;
+      setFeedbackSaving(false);
     }
   }
 
@@ -438,15 +514,15 @@ export default function AssistantPanel({
               <button
                 type="button"
                 onClick={handleCopy}
-                aria-hidden={!output || isEditingOutput || isFallback}
+                aria-hidden={!reportReady || isEditingOutput || isFallback}
                 tabIndex={
-                  output && !isEditingOutput && !isFallback ? 0 : -1
+                  reportReady && !isEditingOutput && !isFallback ? 0 : -1
                 }
                 className="button-secondary !rounded-full !px-3 !py-1.5"
                 title="Copiar al portapapeles"
                 style={{
                   visibility:
-                    output && !isEditingOutput && !isFallback
+                    reportReady && !isEditingOutput && !isFallback
                       ? "visible"
                       : "hidden",
                 }}
@@ -501,14 +577,16 @@ export default function AssistantPanel({
                     <button
                       type="button"
                       onClick={handleSaveEdit}
+                      disabled={feedbackSaving}
                       className="button-primary"
                     >
-                      <Check className="h-4 w-4" />
-                      Guardar version final
+                      {feedbackSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      {feedbackSaving ? "Guardando..." : "Guardar version final"}
                     </button>
                     <button
                       type="button"
                       onClick={handleCancelEdit}
+                      disabled={feedbackSaving}
                       className="button-secondary"
                     >
                       Cancelar
@@ -544,31 +622,33 @@ export default function AssistantPanel({
                 el alto. */}
             <div
               className="mt-3 min-h-[44px]"
-              aria-hidden={!output || isEditingOutput || isFallback}
+              aria-hidden={!reportReady || isEditingOutput || isFallback}
               style={{
                 visibility:
-                  output && !isEditingOutput && !isFallback
+                  reportReady && !isEditingOutput && !isFallback
                     ? "visible"
                     : "hidden",
               }}
             >
-              {output && !isEditingOutput && !isFallback ? (
+              {reportReady && !isEditingOutput && !isFallback ? (
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={handleFeedbackPositive}
+                    disabled={feedbackSaving || feedbackSaved}
                     className="inline-flex items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1.5 text-sm font-medium text-cyan transition hover:bg-cyan/15"
                   >
-                    <ThumbsUp className="h-4 w-4" />
-                    Sirvio tal cual, guardar
+                    {feedbackSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
+                    {feedbackSaved ? "Feedback guardado" : feedbackSaving ? "Guardando..." : "Sirvió tal cual, guardar"}
                   </button>
                   <button
                     type="button"
                     onClick={handleStartEdit}
+                    disabled={feedbackSaving || feedbackSaved}
                     className="inline-flex items-center gap-2 rounded-full border border-lavender/20 bg-lavender/10 px-3 py-1.5 text-sm font-medium text-lavender transition hover:bg-lavender/15"
                   >
                     <PencilLine className="h-4 w-4" />
-                    Lo retoque y guardo version final
+                    Lo retoqué y guardo versión final
                   </button>
                 </div>
               ) : null}

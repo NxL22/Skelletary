@@ -1,8 +1,7 @@
 // Edge Function: assistant-feedback
 // =====================================================================
-// Recibe el feedback del usuario sobre un informe del Asistente y lo
-// persiste en el bucket privado `assistant-feedback` como un archivo
-// markdown por usuaria (feedback/{user_id}.md).
+// Recibe el feedback sobre un informe y lo persiste como aprendizaje personal.
+// La copia Markdown se mantiene solo como respaldo historico del flujo anterior.
 //
 // Validaciones (en este orden, falla rapido):
 //   1. Sesion Supabase valida (Authorization Bearer).
@@ -21,6 +20,7 @@ import {
   createEmbedding,
   extractVariables,
   generalizeText,
+  hasValidReportStructure,
   sanitizeClinicalText,
   sha256Hex,
 } from "./lib/learning.js";
@@ -160,6 +160,12 @@ serve(async (request) => {
   const templateCode = payload?.templateCode
     ? String(payload.templateCode).trim()
     : null;
+  const promptVersion = payload?.promptVersion
+    ? String(payload.promptVersion).slice(0, 80)
+    : "clinical-fast-v1";
+  const requestModel = payload?.model
+    ? String(payload.model).slice(0, 80)
+    : null;
 
   if (!originalInput || !skellyOutput || !humanOutput) {
     return jsonResponse(
@@ -210,6 +216,13 @@ serve(async (request) => {
       }, 422);
     }
 
+    if (!hasValidReportStructure(sanitizedApproved.text)) {
+      return jsonResponse({
+        error: "La version final debe conservar ANTECEDENTES CLINICOS, HALLAZGOS e IMPRESION.",
+        code: "BAD_INPUT",
+      }, 400);
+    }
+
     const inputHash = await sha256Hex(sanitizedInput.text.toLowerCase());
     const { data: latest } = await adminClient
       .from("assistant_feedback_triplets")
@@ -229,7 +242,7 @@ serve(async (request) => {
     const generalizedInput = generalizeText(sanitizedInput.text, variables);
     const generalizedOutput = generalizeText(sanitizedApproved.text, variables);
     const signature = await sha256Hex(`${templateCode ?? ""}\n${generalizedInput.toLowerCase()}`);
-    const model = getEnv("MINIMAX_MODEL", "MiniMax-M3");
+    const model = requestModel || getEnv("MINIMAX_MODEL", "MiniMax-M3");
 
     const { data: feedback, error: feedbackError } = await adminClient
       .from("assistant_feedback_triplets")
@@ -245,6 +258,7 @@ serve(async (request) => {
         variables,
         correction_summary: summary,
         model,
+        prompt_version: promptVersion,
         validation_status: "active",
       })
       .select("id")
@@ -255,6 +269,8 @@ serve(async (request) => {
     const { data: existingMemory } = await adminClient
       .from("assistant_memories")
       .select("id, generalized_output, confidence, support_count, correction_count, contradiction_count")
+      .eq("user_id", userId)
+      .eq("scope", "personal")
       .eq("signature", signature)
       .maybeSingle();
 
@@ -263,7 +279,9 @@ serve(async (request) => {
       const contradicts = existingMemory.generalized_output.trim() !== generalizedOutput.trim();
       const supportCount = existingMemory.support_count + (contradicts ? 0 : 1);
       const contradictionCount = existingMemory.contradiction_count + (contradicts ? 1 : 0);
-      const status = contradictionCount >= 2 && contradictionCount >= supportCount ? "quarantined" : "active";
+      // Una contradiccion no debe influir silenciosamente en futuros informes.
+      // Queda visible en Skelly Lab para que el owner pueda revisarla.
+      const status = contradicts ? "quarantined" : "active";
       const confidence = Math.max(0.1, Math.min(0.95,
         Number(existingMemory.confidence) + (contradicts ? -0.15 : 0.12)));
       const snapshot = { ...existingMemory, status, confidence };
@@ -287,13 +305,16 @@ serve(async (request) => {
       memory = data;
     } else {
       const { data, error } = await adminClient.from("assistant_memories").insert({
+        user_id: userId,
+        scope: "personal",
         signature,
         template_code: templateCode,
         generalized_input: generalizedInput,
         generalized_output: generalizedOutput,
         embedding,
-        confidence: 0.20,
+        confidence: summary.accepted ? 0.40 : 0.30,
         correction_count: summary.accepted ? 0 : 1,
+        status: embedding ? "active" : "quarantined",
         source_feedback_id: feedback.id,
         metadata: { variables: variables.map((item) => item.name) },
       }).select().single();

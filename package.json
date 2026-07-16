@@ -9,7 +9,8 @@
     "test": "node --test test/*.test.js",
     "preview": "vite preview",
     "user:create": "node scripts/create-user.mjs",
-    "assistant:sync": "node scripts/sync-assistant-templates.mjs"
+    "assistant:sync": "node scripts/sync-assistant-templates.mjs",
+    "assistant:evaluate": "node scripts/evaluate-assistant.mjs"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",

@@ -958,17 +958,19 @@ export default function App() {
         skellyOutput: payload.skellyOutput,
         humanOutput: payload.humanOutput,
         templateCode: payload.templateCode ?? null,
+        promptVersion: payload.promptVersion ?? null,
+        model: payload.model ?? null,
       });
       if (!result.appended && result.reason === "duplicate") {
         // Ya tenemos este feedback guardado. No spameamos al usuario con un
         // error: el comportamiento esperado es idempotente.
         pushToast("Ya teniamos este feedback guardado.", "info");
       }
+      return result;
     } catch (feedbackError) {
-      pushToast(
-        feedbackError?.message || "No pudimos guardar el feedback.",
-        "error",
-      );
+      // AssistantPanel conserva el informe y muestra el error junto a la
+      // accion que fallo. Propagamos para no anunciar exito antes de tiempo.
+      throw feedbackError;
     }
   }
 

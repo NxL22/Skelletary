@@ -39,6 +39,11 @@ serve(async (request) => {
   const { data: authData } = await userClient.auth.getUser();
   if (!authData?.user?.id) return reply({ error: "Sesion no valida." }, 401);
   const userId = authData.user.id;
+  // El PIN es una segunda barrera, no una forma de convertir a otra usuaria en
+  // owner. El UUID se guarda como secret y nunca viaja al frontend.
+  if (!safeEqual(userId, env("ASSISTANT_OWNER_USER_ID"))) {
+    return reply({ error: "Skelly Lab es exclusivo del owner." }, 403);
+  }
   const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
     auth: { persistSession: false },
   });
@@ -83,6 +88,30 @@ serve(async (request) => {
     await admin.from("assistant_audit_log").insert({ actor_user_id: userId, action: `memory.${status}`, target_type: "memory", target_id: payload.memoryId });
   }
 
+  if (action === "promote-global") {
+    const { data: memory, error: memoryError } = await admin
+      .from("assistant_memories")
+      .select("id, signature, scope, status")
+      .eq("id", payload.memoryId)
+      .maybeSingle();
+    if (memoryError) throw memoryError;
+    if (!memory) return reply({ error: "La memoria ya no existe." }, 404);
+    const { error } = await admin
+      .from("assistant_memories")
+      .update({ scope: "global", user_id: null, status: "active", updated_at: new Date().toISOString() })
+      .eq("id", memory.id);
+    if (error) {
+      return reply({ error: "Ya existe una memoria global equivalente o no pudo promoverse." }, 409);
+    }
+    await admin.from("assistant_audit_log").insert({
+      actor_user_id: userId,
+      action: "memory.promote_global",
+      target_type: "memory",
+      target_id: memory.id,
+      detail: { previousScope: memory.scope, previousStatus: memory.status },
+    });
+  }
+
   if (action === "rollback") {
     const { data: version } = await admin.from("assistant_memory_versions").select("snapshot").eq("memory_id", payload.memoryId).order("version", { ascending: false }).limit(1).maybeSingle();
     if (!version?.snapshot) return reply({ error: "No existe una version anterior." }, 404);
@@ -100,10 +129,11 @@ serve(async (request) => {
     await admin.from("assistant_audit_log").insert({ actor_user_id: userId, action: "memory.rollback", target_type: "memory", target_id: payload.memoryId });
   }
 
-  const [{ data: memories }, { count: feedbackCount }, { count: templateCount }] = await Promise.all([
-    admin.from("assistant_memories").select("id, generalized_input, generalized_output, confidence, support_count, contradiction_count, status, updated_at").order("updated_at", { ascending: false }).limit(100),
+  const [{ data: memories }, { count: feedbackCount }, { count: templateCount }, { data: evaluations }] = await Promise.all([
+    admin.from("assistant_memories").select("id, user_id, scope, template_code, generalized_input, generalized_output, confidence, support_count, contradiction_count, status, updated_at").order("updated_at", { ascending: false }).limit(100),
     admin.from("assistant_feedback_triplets").select("id", { count: "exact", head: true }),
-    admin.from("assistant_ai_templates").select("source_template_id", { count: "exact", head: true }),
+    admin.from("assistant_ai_templates").select("source_template_id", { count: "exact", head: true }).eq("status", "active"),
+    admin.from("assistant_eval_runs").select("id, model, prompt_version, status, metrics, started_at, completed_at").order("started_at", { ascending: false }).limit(10),
   ]);
   return reply({
     metrics: {
@@ -114,5 +144,6 @@ serve(async (request) => {
       templates: templateCount ?? 0,
     },
     memories: memories ?? [],
+    evaluations: evaluations ?? [],
   });
 });

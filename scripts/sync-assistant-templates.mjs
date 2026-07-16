@@ -31,4 +31,23 @@ for (let offset = 0; offset < rows.length; offset += 100) {
   const { error } = await supabase.from("assistant_ai_templates").upsert(rows.slice(offset, offset + 100));
   if (error) throw error;
 }
+
+// La sincronizacion es un espejo: una plantilla retirada de la fuente oficial
+// no puede seguir apareciendo silenciosamente como candidata para la IA.
+const activeIds = new Set(rows.map((row) => row.source_template_id));
+const { data: existing, error: existingError } = await supabase
+  .from("assistant_ai_templates")
+  .select("source_template_id")
+  .eq("status", "active");
+if (existingError) throw existingError;
+const staleIds = (existing ?? [])
+  .map((row) => row.source_template_id)
+  .filter((id) => !activeIds.has(id));
+for (let offset = 0; offset < staleIds.length; offset += 100) {
+  const { error } = await supabase
+    .from("assistant_ai_templates")
+    .update({ status: "quarantined", synced_at: new Date().toISOString() })
+    .in("source_template_id", staleIds.slice(offset, offset + 100));
+  if (error) throw error;
+}
 console.log(`Biblioteca privada sincronizada: ${rows.length} plantillas.`);

@@ -4,6 +4,7 @@ import {
   correctionSummary,
   extractVariables,
   generalizeText,
+  hasValidReportStructure,
   sanitizeClinicalText,
 } from "../supabase/functions/assistant-feedback/lib/learning.js";
 
@@ -11,6 +12,11 @@ test("separa medidas del conocimiento reusable", () => {
   const variables = extractVariables("nodulo de 8 mm", "Mide 8 mm y volumen 2,5 cc");
   assert.deepEqual(variables.map((item) => item.value), ["8 mm", "2,5 cc"]);
   assert.equal(generalizeText("Nodulo de 8 mm", variables), "Nodulo de {{medida_1}}");
+});
+
+test("solo aprende versiones con estructura completa", () => {
+  assert.equal(hasValidReportStructure("ANTECEDENTES CLINICOS:\nA\nHALLAZGOS:\nB\nIMPRESION:\nC"), true);
+  assert.equal(hasValidReportStructure("HALLAZGOS:\nB"), false);
 });
 
 test("bloquea identificadores antes de persistir", () => {
