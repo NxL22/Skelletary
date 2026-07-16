@@ -436,7 +436,7 @@ export default function SkellyDashboardMascota({ introToken = 0, userId = null }
         aria-pressed={isMuted}
         aria-label={isMuted ? "Activar voz de Skelly" : "Silenciar voz de Skelly"}
         title={isMuted ? "Activar voz de Skelly" : "Silenciar voz de Skelly"}
-        className="absolute bottom-[3px] left-[10px] z-30 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-900 bg-[#fdfcff] text-slate-800 shadow-[2px_2.5px_0_0_rgba(15,23,42,0.92)] transition hover:-translate-y-px hover:bg-fuchsia-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/70 active:translate-y-0 active:shadow-none sm:bottom-[7px] sm:left-[14px] lg:bottom-[11px] lg:left-[18px]"
+        className="absolute bottom-[3px] left-[10px] z-30 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-900 bg-[#fdfcff] text-slate-800 shadow-[2px_2.5px_0_0_rgba(15,23,42,0.92)] transition hover:bg-fuchsia-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/70 sm:bottom-[7px] sm:left-[14px] lg:bottom-[11px] lg:left-[18px]"
       >
         {isMuted ? <VolumeX className="h-[18px] w-[18px]" /> : <Volume2 className="h-[18px] w-[18px]" />}
       </button>

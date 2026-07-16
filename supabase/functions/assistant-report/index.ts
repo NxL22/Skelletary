@@ -16,8 +16,8 @@
 //
 // Variables de entorno requeridas (configurar en Supabase Edge Function secrets):
 //   - MINIMAX_API_KEY         API key del proveedor LLM
-//   - MINIMAX_BASE_URL        Base URL (default: https://api.minimax.chat/v1)
-//   - MINIMAX_MODEL           Modelo a usar (default: MiniMax/M3)
+//   - MINIMAX_BASE_URL        Base URL (default: https://api.minimax.io/v1)
+//   - MINIMAX_MODEL           Modelo a usar (default: MiniMax-M3)
 //   - SUPABASE_URL            La URL de tu proyecto Supabase
 //   - SUPABASE_ANON_KEY       Anon key (para construir el cliente por request)
 //   - SUPABASE_SERVICE_ROLE_KEY  Service role (para escribir en assistant_usage)
@@ -31,9 +31,9 @@ import { sanitizeReport } from "./lib/sanitize.js";
 import { callLlm } from "./lib/llm.js";
 import {
   buildExamplesBlock,
-  FEEDBACK_LIMITS,
   loadRecentFeedback,
 } from "./lib/feedback.js";
+import { buildMemoryBlock, retrieveMemories } from "./lib/memory.js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -149,6 +149,7 @@ async function resolveUserContext(request) {
 }
 
 serve(async (request) => {
+  const requestStartedAt = Date.now();
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -241,10 +242,20 @@ serve(async (request) => {
     );
   }
 
-  // 3) Knowledge base (con cache interno de 10 minutos).
+  // Knowledge, feedback y memoria son independientes. Cargarlos juntos reduce
+  // el tiempo muerto antes de pedir el primer token al proveedor.
   let knowledge;
+  let examplesBlock = "";
+  let memoryBlock = "";
   try {
-    knowledge = await loadKnowledge(adminClient);
+    const [loadedKnowledge, recentFeedback, memories] = await Promise.all([
+      loadKnowledge(adminClient),
+      loadRecentFeedback(adminClient, userId, { limit: 2 }).catch(() => []),
+      retrieveMemories(adminClient, userId, userInput, templateCode, 4),
+    ]);
+    knowledge = loadedKnowledge;
+    examplesBlock = buildExamplesBlock(recentFeedback);
+    memoryBlock = buildMemoryBlock(memories);
   } catch (error) {
     return jsonResponse(
       {
@@ -253,24 +264,6 @@ serve(async (request) => {
         detail: error?.message ?? String(error),
       },
       500,
-    );
-  }
-
-  // 4) Leer feedback previo del usuario para inyectarlo en el prompt como
-  // ejemplos de estilo. Si el bucket no existe o el archivo esta vacio,
-  // seguimos funcionando normalmente (no es error).
-  let examplesBlock = "";
-  try {
-    const recentFeedback = await loadRecentFeedback(adminClient, userId, {
-      limit: FEEDBACK_LIMITS.DEFAULT_LIMIT,
-    });
-    examplesBlock = buildExamplesBlock(recentFeedback);
-  } catch (feedbackError) {
-    // Si falla la lectura de feedback, seguimos sin ejemplos. Logueamos y
-    // continuamos para no romper la experiencia del usuario.
-    console.warn(
-      "No pudimos cargar feedback previo, seguimos sin ejemplos:",
-      feedbackError?.message ?? String(feedbackError),
     );
   }
 
@@ -307,7 +300,9 @@ serve(async (request) => {
     candidateTemplates,
     dictionaryFallback: knowledge.dictionary,
     examplesBlock,
+    memoryBlock,
   });
+  const retrievalMs = Date.now() - requestStartedAt;
 
   // 6) Llamar al LLM. Si el cliente pidio stream (?stream=true o header Accept:
   //    text/event-stream), devolvemos los tokens conforme llegan. Si no,
@@ -317,8 +312,8 @@ serve(async (request) => {
   if (wantsStream) {
     return await handleStreamedResponse({
       apiKey: getEnv("MINIMAX_API_KEY"),
-      baseUrl: getEnv("MINIMAX_BASE_URL", "https://api.minimax.chat/v1"),
-      model: getEnv("MINIMAX_MODEL", "MiniMax/M3"),
+      baseUrl: getEnv("MINIMAX_BASE_URL", "https://api.minimax.io/v1"),
+      model: getEnv("MINIMAX_MODEL", "MiniMax-M3"),
       systemPrompt,
       userInput,
       templateCode,
@@ -329,6 +324,7 @@ serve(async (request) => {
         windowEnd: usage.windowEnd,
         remaining: getRemainingUsage(usage),
       },
+      timings: { retrievalMs, requestStartedAt },
     });
   }
 
@@ -336,8 +332,8 @@ serve(async (request) => {
   try {
     llmResult = await callLlm({
       apiKey: getEnv("MINIMAX_API_KEY"),
-      baseUrl: getEnv("MINIMAX_BASE_URL", "https://api.minimax.chat/v1"),
-      model: getEnv("MINIMAX_MODEL", "MiniMax/M3"),
+      baseUrl: getEnv("MINIMAX_BASE_URL", "https://api.minimax.io/v1"),
+      model: getEnv("MINIMAX_MODEL", "MiniMax-M3"),
       systemPrompt,
       userInput,
     });
@@ -381,6 +377,10 @@ serve(async (request) => {
       windowEnd: usage.windowEnd,
       remaining: getRemainingUsage(usage),
     },
+    timings: {
+      retrievalMs,
+      totalMs: Date.now() - requestStartedAt,
+    },
   });
 });
 
@@ -415,6 +415,7 @@ async function handleStreamedResponse({
   templateCode,
   usage,
   hadModality = false,
+  timings = {},
 }) {
   const url = `${baseUrl.replace(/\/$/, "")}/chat/completions`;
   let llmResponse;
@@ -471,17 +472,20 @@ async function handleStreamedResponse({
       }
 
       try {
-        emit({ type: "start", usage });
+        emit({ type: "start", usage, timings: { retrievalMs: timings.retrievalMs ?? null } });
 
+        let upstreamBuffer = "";
+        let lastPreview = "";
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
             break;
           }
-          const chunk = decoder.decode(value, { stream: true });
+          upstreamBuffer += decoder.decode(value, { stream: true });
           // El stream del LLM viene como "data: {...}\n\n".
           // Parseamos cada linea `data:` y extraemos content.
-          const lines = chunk.split("\n");
+          const lines = upstreamBuffer.split("\n");
+          upstreamBuffer = lines.pop() ?? "";
           for (const line of lines) {
             const trimmed = line.trim();
             if (!trimmed.startsWith("data:")) {
@@ -495,8 +499,18 @@ async function handleStreamedResponse({
               const parsed = JSON.parse(payload);
               const delta = parsed?.choices?.[0]?.delta?.content;
               if (delta) {
+                if (!timings.firstTokenAt) timings.firstTokenAt = Date.now();
                 accumulatedText += delta;
-                emit({ type: "delta", text: delta });
+                // Solo mostramos previews que ya tienen estructura de informe.
+                // El valor es el texto completo para que el cliente lo reemplace,
+                // evitando concatenar fragmentos que luego cambie el sanitizer.
+                if (accumulatedText.includes("HALLAZGOS:") && accumulatedText.includes("\n")) {
+                  const preview = accumulatedText.replace(/```/g, "").trim();
+                  if (preview.length > lastPreview.length + 24) {
+                    lastPreview = preview;
+                    emit({ type: "preview", text: preview });
+                  }
+                }
               }
             } catch {
               // Ignorar lineas que no parsean (keepalive, etc).
@@ -519,12 +533,22 @@ async function handleStreamedResponse({
               question: sanitized.question,
               warnings: [],
               isFallback: false,
+              timings: {
+                retrievalMs: timings.retrievalMs ?? null,
+                firstTokenMs: timings.firstTokenAt ? timings.firstTokenAt - timings.requestStartedAt : null,
+                totalMs: Date.now() - timings.requestStartedAt,
+              },
             }
           : {
               type: "done",
               text: sanitized.text,
               warnings: sanitized.warnings,
               isFallback: Boolean(sanitized.isFallback),
+              timings: {
+                retrievalMs: timings.retrievalMs ?? null,
+                firstTokenMs: timings.firstTokenAt ? timings.firstTokenAt - timings.requestStartedAt : null,
+                totalMs: Date.now() - timings.requestStartedAt,
+              },
             };
         emit(donePayload);
         emit("[DONE]");

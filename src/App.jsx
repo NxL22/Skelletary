@@ -29,6 +29,7 @@ import ToastStack from "./components/ToastStack";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import AuthScreen from "./components/AuthScreen";
 import PasswordChangeModal from "./components/PasswordChangeModal";
+import SkellyLab from "./components/SkellyLab";
 import { copyText, playCopyFeedback } from "./lib/clipboard";
 import { normalizeProfile, resolveAccessState } from "./lib/access";
 import { submitAssistantFeedback } from "./lib/assistant";
@@ -1003,6 +1004,12 @@ export default function App() {
     );
   }
 
+  // GitHub Pages no resuelve rutas del servidor. El hash mantiene una ruta
+  // privada estable sin agregar un router ni romper recargas del sitio.
+  if (window.location.hash === "#/skelly-lab") {
+    return <SkellyLab />;
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(123,223,246,0.08),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(184,181,255,0.08),transparent_20%),radial-gradient(circle_at_bottom_right,rgba(246,171,200,0.08),transparent_24%)]" />
@@ -1078,7 +1085,7 @@ export default function App() {
             <div ref={resultsTopRef} className="glass-panel rounded-[28px] p-4 shadow-card">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+                  <div className="mb-2 flex items-center gap-2 text-[15px] uppercase tracking-[0.18em] text-slate-400">
                     <Layers3 className="h-3.5 w-3.5 text-cyan" />
                     Vista activa
                   </div>
@@ -1178,7 +1185,7 @@ export default function App() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-center gap-2 pb-1 text-center text-xs uppercase tracking-[0.18em] text-cyan">
+        <div className="flex items-center justify-start gap-2 pb-1 pl-3 pr-16 text-center text-[15px] uppercase tracking-[0.18em] text-cyan sm:justify-center sm:pr-3">
           <span>Hecho con cariño para mi esposa</span>
           <span className="footer-heart-shell" aria-hidden="true">
             <Heart className="footer-heart-icon h-3.5 w-3.5 fill-current text-rose" />

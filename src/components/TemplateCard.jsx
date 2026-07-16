@@ -130,7 +130,7 @@ export default function TemplateCard({
 
   return (
     <article
-      className="group glass-panel flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] p-5 shadow-card transition hover:-translate-y-1 hover:border-cyan/20 hover:bg-white/[0.07]"
+      className="group glass-panel flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] p-5 shadow-card transition hover:border-cyan/20 hover:bg-white/[0.07]"
       onClick={() => onOpen(template)}
     >
       <div className={`flex items-start justify-between gap-3 ${CARD_HEADER_MIN_HEIGHT_CLASS}`}>

@@ -5,6 +5,7 @@
 -- Ninguna biblioteca debe quedar expuesta a usuarios anonimos.
 
 create extension if not exists "pgcrypto";
+create extension if not exists vector with schema extensions;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -286,3 +287,98 @@ for update
 to authenticated
 using (auth.uid() = user_id and public.user_has_app_access(auth.uid()))
 with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
+
+-- Memoria privada de Skelly Redactor. Estas tablas no tienen politicas para
+-- authenticated: el cliente nunca accede al conocimiento directamente.
+create table if not exists public.assistant_feedback_triplets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  input_hash text not null,
+  version integer not null default 1,
+  feedback_kind text not null check (feedback_kind in ('accepted', 'corrected')),
+  template_code text,
+  sanitized_input text not null,
+  sanitized_skelly_output text not null,
+  sanitized_approved_output text not null,
+  variables jsonb not null default '[]'::jsonb,
+  correction_summary jsonb not null default '{}'::jsonb,
+  model text,
+  prompt_version text not null default 'continuous-v1',
+  validation_status text not null check (validation_status in ('active', 'quarantined')),
+  validation_reasons jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  unique (user_id, input_hash, version)
+);
+
+create table if not exists public.assistant_memories (
+  id uuid primary key default gen_random_uuid(),
+  signature text not null unique,
+  template_code text,
+  generalized_input text not null,
+  generalized_output text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  embedding extensions.vector(384),
+  confidence numeric(5,4) not null default 0.20 check (confidence between 0 and 1),
+  support_count integer not null default 1,
+  correction_count integer not null default 0,
+  contradiction_count integer not null default 0,
+  status text not null default 'active' check (status in ('active', 'quarantined', 'disabled')),
+  source_feedback_id uuid references public.assistant_feedback_triplets(id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.assistant_memory_versions (
+  id bigint generated always as identity primary key,
+  memory_id uuid not null references public.assistant_memories(id) on delete cascade,
+  feedback_id uuid references public.assistant_feedback_triplets(id) on delete set null,
+  version integer not null,
+  snapshot jsonb not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  unique (memory_id, version)
+);
+
+create table if not exists public.assistant_ai_templates (
+  source_template_id text primary key,
+  source_hash text not null,
+  title text not null,
+  category text not null,
+  normalized_content text not null,
+  variables jsonb not null default '[]'::jsonb,
+  metadata jsonb not null default '{}'::jsonb,
+  embedding extensions.vector(384),
+  status text not null default 'active' check (status in ('active', 'quarantined')),
+  synced_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.assistant_admin_sessions (
+  token_hash text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.assistant_admin_attempts (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  failed_count integer not null default 0,
+  blocked_until timestamptz,
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.assistant_audit_log (
+  id bigint generated always as identity primary key,
+  actor_user_id uuid references auth.users(id) on delete set null,
+  action text not null,
+  target_type text,
+  target_id text,
+  detail jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+alter table public.assistant_feedback_triplets enable row level security;
+alter table public.assistant_memories enable row level security;
+alter table public.assistant_memory_versions enable row level security;
+alter table public.assistant_ai_templates enable row level security;
+alter table public.assistant_admin_sessions enable row level security;
+alter table public.assistant_admin_attempts enable row level security;
+alter table public.assistant_audit_log enable row level security;

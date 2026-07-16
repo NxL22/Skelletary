@@ -15,7 +15,15 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.1";
-import { appendFeedback, sha256Hex } from "./lib/feedback.js";
+import { appendFeedback } from "./lib/feedback.js";
+import {
+  correctionSummary,
+  createEmbedding,
+  extractVariables,
+  generalizeText,
+  sanitizeClinicalText,
+  sha256Hex,
+} from "./lib/learning.js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -183,20 +191,132 @@ serve(async (request) => {
   }
   const { userId, adminClient } = ctx;
 
-  // 2) Append feedback con dedup y retencion de 50 entradas.
+  // 2) Guardar el triplete completo. Una correccion posterior del mismo input
+  // crea una version nueva: nunca se pierde el criterio humano mas reciente.
   try {
-    const inputHash = await sha256Hex(originalInput);
-    const result = await appendFeedback(adminClient, userId, {
+    const sanitizedInput = sanitizeClinicalText(originalInput);
+    const sanitizedSkelly = sanitizeClinicalText(skellyOutput);
+    const sanitizedApproved = sanitizeClinicalText(humanOutput);
+    const privacyReasons = [
+      ...sanitizedInput.reasons,
+      ...sanitizedSkelly.reasons,
+      ...sanitizedApproved.reasons,
+    ];
+    if (privacyReasons.length > 0) {
+      return jsonResponse({
+        error: "No guardamos este aprendizaje porque detectamos posibles datos identificables.",
+        code: "PRIVACY_BLOCKED",
+        detail: `Revisa: ${[...new Set(privacyReasons)].join(", ")}.`,
+      }, 422);
+    }
+
+    const inputHash = await sha256Hex(sanitizedInput.text.toLowerCase());
+    const { data: latest } = await adminClient
+      .from("assistant_feedback_triplets")
+      .select("version")
+      .eq("user_id", userId)
+      .eq("input_hash", inputHash)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const version = (latest?.version ?? 0) + 1;
+    const variables = extractVariables(
+      sanitizedInput.text,
+      sanitizedSkelly.text,
+      sanitizedApproved.text,
+    );
+    const summary = correctionSummary(sanitizedSkelly.text, sanitizedApproved.text);
+    const generalizedInput = generalizeText(sanitizedInput.text, variables);
+    const generalizedOutput = generalizeText(sanitizedApproved.text, variables);
+    const signature = await sha256Hex(`${templateCode ?? ""}\n${generalizedInput.toLowerCase()}`);
+    const model = getEnv("MINIMAX_MODEL", "MiniMax-M3");
+
+    const { data: feedback, error: feedbackError } = await adminClient
+      .from("assistant_feedback_triplets")
+      .insert({
+        user_id: userId,
+        input_hash: inputHash,
+        version,
+        feedback_kind: summary.accepted ? "accepted" : "corrected",
+        template_code: templateCode,
+        sanitized_input: sanitizedInput.text,
+        sanitized_skelly_output: sanitizedSkelly.text,
+        sanitized_approved_output: sanitizedApproved.text,
+        variables,
+        correction_summary: summary,
+        model,
+        validation_status: "active",
+      })
+      .select("id")
+      .single();
+    if (feedbackError) throw feedbackError;
+
+    const embedding = await createEmbedding(generalizedInput);
+    const { data: existingMemory } = await adminClient
+      .from("assistant_memories")
+      .select("id, generalized_output, confidence, support_count, correction_count, contradiction_count")
+      .eq("signature", signature)
+      .maybeSingle();
+
+    let memory;
+    if (existingMemory) {
+      const contradicts = existingMemory.generalized_output.trim() !== generalizedOutput.trim();
+      const supportCount = existingMemory.support_count + (contradicts ? 0 : 1);
+      const contradictionCount = existingMemory.contradiction_count + (contradicts ? 1 : 0);
+      const status = contradictionCount >= 2 && contradictionCount >= supportCount ? "quarantined" : "active";
+      const confidence = Math.max(0.1, Math.min(0.95,
+        Number(existingMemory.confidence) + (contradicts ? -0.15 : 0.12)));
+      const snapshot = { ...existingMemory, status, confidence };
+      await adminClient.from("assistant_memory_versions").insert({
+        memory_id: existingMemory.id,
+        feedback_id: feedback.id,
+        version: supportCount + contradictionCount,
+        snapshot,
+      });
+      const { data, error } = await adminClient.from("assistant_memories").update({
+        generalized_output: contradicts ? existingMemory.generalized_output : generalizedOutput,
+        confidence,
+        support_count: supportCount,
+        correction_count: existingMemory.correction_count + (summary.accepted ? 0 : 1),
+        contradiction_count: contradictionCount,
+        status,
+        embedding: embedding ?? undefined,
+        updated_at: new Date().toISOString(),
+      }).eq("id", existingMemory.id).select().single();
+      if (error) throw error;
+      memory = data;
+    } else {
+      const { data, error } = await adminClient.from("assistant_memories").insert({
+        signature,
+        template_code: templateCode,
+        generalized_input: generalizedInput,
+        generalized_output: generalizedOutput,
+        embedding,
+        confidence: 0.20,
+        correction_count: summary.accepted ? 0 : 1,
+        source_feedback_id: feedback.id,
+        metadata: { variables: variables.map((item) => item.name) },
+      }).select().single();
+      if (error) throw error;
+      memory = data;
+    }
+
+    // Backup legible: no participa de la recuperacion ni bloquea nuevas versiones.
+    await appendFeedback(adminClient, userId, {
       templateCode,
-      inputHash,
-      userInput: originalInput,
-      humanOutput,
-    });
+      inputHash: `${inputHash}-v${version}`,
+      userInput: sanitizedInput.text,
+      humanOutput: sanitizedApproved.text,
+    }).catch((error) => console.warn("No se pudo actualizar backup Markdown:", error?.message ?? error));
 
     return jsonResponse({
       ok: true,
-      appended: result.appended,
-      reason: result.reason ?? null,
+      appended: true,
+      feedbackId: feedback.id,
+      learningStatus: memory.status,
+      activated: memory.status === "active" && Boolean(memory.embedding),
+      confidence: Number(memory.confidence),
+      supportCount: memory.support_count,
     });
   } catch (error) {
     return jsonResponse(

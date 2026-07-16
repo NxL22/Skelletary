@@ -69,7 +69,7 @@ export default function VariableFillModal({
       </div>
 
       <div className="space-y-4">
-        <p className="text-xs leading-5 text-slate-400">
+        <p className="text-[15px] leading-6 text-slate-400">
           {getVoiceUsageHint("medical-content")}
         </p>
         {variables.map((variableName) => (

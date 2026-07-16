@@ -30,7 +30,7 @@ import VoiceFieldButton from "./VoiceFieldButton";
 function Stat({ label, value }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="text-[15px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
       <div className="mt-2 text-sm font-medium text-white break-words">{value}</div>
     </div>
   );
@@ -191,7 +191,7 @@ export default function TemplateDetailModal({
               </span>
             ))}
           </div>
-          <p className="text-xs leading-5 text-slate-400">
+          <p className="text-[15px] leading-6 text-slate-400">
             Aqui puedes ajustar los atajos de esta plantilla. Si quieres, agregarlos o eliminarlos.
             Desbloquea la edicion local para empezar.
           </p>
@@ -209,10 +209,10 @@ export default function TemplateDetailModal({
               </span>
             ))}
           </div>
-          <p className="text-xs leading-5 text-slate-400">
+          <p className="text-[15px] leading-6 text-slate-400">
             Aqui puedes ajustar los atajos de esta plantilla. Si quieres, agregarlos o eliminarlos.
           </p>
-          <p className="text-xs leading-5 text-slate-400">
+          <p className="text-[15px] leading-6 text-slate-400">
             Cada atajo se muestra como un tag. El tag principal es el que sale en las tarjetas y tiene un maximo de {DISPLAY_SHORTCUT_MAX_LENGTH} caracteres. Si es mas largo, Skelletary muestra una version corta.
           </p>
           <button type="button" onClick={handleStartShortcutEdit} className="button-secondary button-no-lift">
@@ -229,7 +229,7 @@ export default function TemplateDetailModal({
           {shortcutDraft.map((shortcutAlias) => (
             <span
               key={shortcutAlias}
-              className="inline-flex max-w-full items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1 text-xs text-cyan"
+              className="inline-flex max-w-full items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1 text-[15px] text-cyan"
             >
               <span className="break-all font-mono">{shortcutAlias}</span>
               <button
@@ -246,7 +246,7 @@ export default function TemplateDetailModal({
         </div>
 
         {!shortcutDraft.length ? (
-          <p className="text-xs leading-5 text-slate-400">
+          <p className="text-[15px] leading-6 text-slate-400">
             Si guardas sin atajos, Skelletary generara uno automaticamente desde el titulo y la categoria.
           </p>
         ) : null}
@@ -265,17 +265,17 @@ export default function TemplateDetailModal({
           </button>
         </div>
 
-        <p className="text-xs leading-5 text-slate-400">
+        <p className="text-[15px] leading-6 text-slate-400">
           Aqui puedes ajustar los atajos de esta plantilla. Si quieres, agregarlos o eliminarlos.
         </p>
-        <p className="text-xs leading-5 text-slate-400">
+        <p className="text-[15px] leading-6 text-slate-400">
           El primer atajo queda como principal y se muestra como tag. Puedes quitar los tags que no quieras y dejar solo los que realmente usas.
         </p>
-        <p className="text-xs leading-5 text-slate-400">
+        <p className="text-[15px] leading-6 text-slate-400">
           El tag principal tiene un maximo de {DISPLAY_SHORTCUT_MAX_LENGTH} caracteres. Si es mas largo, Skelletary muestra una version corta.
         </p>
 
-        {shortcutError ? <p className="text-xs leading-5 text-rose">{shortcutError}</p> : null}
+        {shortcutError ? <p className="text-[15px] leading-6 text-rose">{shortcutError}</p> : null}
 
         <div className="flex flex-wrap gap-2">
           <button
@@ -382,7 +382,7 @@ export default function TemplateDetailModal({
                   ? 'Si dejas la variable "antecedente" en blanco, Skelletary la rellenara automaticamente con Sin diagnóstico. Las demas variables vacias se copiaran como ___.'
                   : "Rellena solo lo necesario. Si dejas algo vacio, se copiara como ___."}
               </p>
-              <p className="mt-3 text-xs leading-5 text-slate-400">
+              <p className="mt-3 text-[15px] leading-6 text-slate-400">
                 {getVoiceUsageHint("medical-content")}
               </p>
 

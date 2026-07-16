@@ -343,7 +343,7 @@ export default function AuthScreen({
               <LoginBrandBadge />
 
               <div className="pt-1">
-                <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan/95">
+                <span className="inline-flex items-center gap-2 text-[14px] font-semibold uppercase tracking-[0.24em] text-cyan/95">
                   <span className="login-status-led h-2 w-2 rounded-full bg-cyan" />
                   {getStatusLabel({ accessState, authMode, hasSession, loading })}
                 </span>
@@ -590,7 +590,7 @@ export default function AuthScreen({
             ) : (
               <div className="mt-8 space-y-5">
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-5">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+                  <p className="text-[14px] font-medium uppercase tracking-[0.2em] text-slate-500">
                     Cuenta actual
                   </p>
                   <p className="mt-3 text-lg font-medium text-white">
@@ -618,7 +618,7 @@ export default function AuthScreen({
             )}
           </div>
 
-          <p className="login-footer-copy mt-4 pb-4 text-center text-xs tracking-[0.18em] text-slate-500/80">
+          <p className="login-footer-copy mt-4 pb-4 text-center text-[15px] tracking-[0.18em] text-slate-500/80">
             © {currentYear} Skelletary
           </p>
         </div>

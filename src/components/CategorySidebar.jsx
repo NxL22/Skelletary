@@ -62,7 +62,7 @@ function ViewButton({ active, label, count, onClick }) {
         />
         <span className="truncate">{label}</span>
       </span>
-      <span className="ml-3 shrink-0 rounded-full bg-slate-950/70 px-2 py-1 text-xs text-slate-400 transition duration-200 group-hover:border-cyan/20 group-hover:text-slate-200">
+      <span className="ml-3 shrink-0 rounded-full bg-slate-950/70 px-2 py-1 text-[15px] text-slate-400 transition duration-200 group-hover:border-cyan/20 group-hover:text-slate-200">
         {count}
       </span>
     </button>
@@ -77,8 +77,8 @@ function CategoryPageControls({ currentPage, totalPages, totalItems, pageSize, o
     <div className="mt-4 rounded-[22px] border border-white/10 bg-slate-950/35 p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Categorias</p>
-          <p className="mt-1 text-xs leading-5 text-slate-400">
+          <p className="text-[14px] uppercase tracking-[0.2em] text-slate-500">Categorias</p>
+          <p className="mt-1 text-[15px] leading-6 text-slate-400">
             {startItem}-{endItem} de {totalItems}. Pagina {currentPage} de {totalPages}.
           </p>
         </div>
@@ -261,7 +261,7 @@ export default function CategorySidebar({
     <>
       <div className="glass-panel rounded-[24px] p-3 shadow-card lg:hidden">
         <div className="mb-3">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Navegacion</p>
+          <p className="text-[15px] uppercase tracking-[0.18em] text-slate-400">Navegacion</p>
           <h2 className="mt-1 font-display text-lg font-semibold text-white">Categorias</h2>
         </div>
 
@@ -293,7 +293,7 @@ export default function CategorySidebar({
 
       <aside className="glass-panel hidden self-start rounded-[28px] p-4 shadow-card lg:block">
         <div className="mb-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Navegacion</p>
+          <p className="text-[15px] uppercase tracking-[0.18em] text-slate-400">Navegacion</p>
           <h2 className="mt-1 font-display text-xl font-semibold text-white">Categorias</h2>
         </div>
 

@@ -464,3 +464,22 @@ estas seguro de como funciona un flag o un estado, lee primero:
 - `supabase/schema.sql` (ver que columnas existen y que check hay)
 
 No inventes reglas. Si tienes dudas, pregunta al owner.
+## Aprendizaje continuo de Skelly Redactor
+
+Skelly conserva su RAG y sus reglas clinicas. Sobre esa base usa una memoria
+semantica privada: cada confirmacion registra entrada, salida original y salida
+aprobada. Las medidas se sustituyen por variables antes de generalizar, por lo
+que un valor de un paciente nunca se convierte en una regla para otro.
+
+- Una memoria nueva se activa solo para consultas con similitud muy alta.
+- Confirmaciones repetidas aumentan confianza y alcance; contradicciones la
+  debilitan y pueden dejarla en cuarentena automaticamente.
+- La memoria es colectiva, con una preferencia pequena por feedback de la misma
+  usuaria. Se recuperan como maximo cuatro ejemplos.
+- Las tablas tienen RLS sin acceso cliente. Solo las Edge Functions con service
+  role pueden usarlas.
+- `/#/skelly-lab` permite auditar, desactivar y revertir. El PIN se valida en
+  `assistant-admin` con el secreto `ASSISTANT_ADMIN_PIN`; nunca es `VITE_*`.
+- La fuente oficial sigue siendo `src/data/defaultTemplates.json`. La tabla
+  `assistant_ai_templates` es una copia privada de una sola direccion y se
+  sincroniza con `npm run assistant:sync`.

@@ -41,7 +41,7 @@ function splitThinkingText(text) {
   };
 }
 
-function DnaThinkingIcon({ size = 30 }) {
+function DnaThinkingIcon({ size = 30, wrapperClassName = "" }) {
   const rawId = useId().replace(/:/g, "");
   const glowId = `skelly-dna-glow-${rawId}`;
   const maskId = `skelly-dna-mask-${rawId}`;
@@ -62,7 +62,7 @@ function DnaThinkingIcon({ size = 30 }) {
 
   return (
     <span
-      className="skelly-dna-glow relative inline-block shrink-0"
+      className={`skelly-dna-glow relative inline-block shrink-0 ${wrapperClassName}`}
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
@@ -138,7 +138,7 @@ export default function SkellyThinking({
   return (
     <div
       className={[
-        "relative mx-auto flex w-fit max-w-full items-center justify-center gap-3 px-2 py-2 text-center",
+        "relative mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-2 text-center sm:flex-nowrap sm:gap-3",
         className,
       ].join(" ")}
       role="status"
@@ -149,9 +149,9 @@ export default function SkellyThinking({
         className="pointer-events-none absolute inset-x-10 inset-y-2 -z-10 rounded-full bg-[radial-gradient(circle,rgba(123,223,246,0.16)_0%,rgba(123,223,246,0.06)_42%,transparent_74%)] blur-xl"
       />
 
-      <DnaThinkingIcon size={30} />
+      <DnaThinkingIcon size={22} wrapperClassName="skelly-thinking-dna--lg" />
 
-      <span className="min-w-0 whitespace-nowrap text-sm leading-none text-slate-300">
+      <span className="min-w-0 text-[16px] leading-snug text-slate-300 sm:text-base sm:leading-none sm:whitespace-nowrap">
         <span className="font-display font-semibold tracking-[-0.02em] text-cyan [text-shadow:0_0_10px_rgba(123,223,246,0.32)]">
           {brandLabel}
         </span>
@@ -162,7 +162,7 @@ export default function SkellyThinking({
         ) : null}
       </span>
 
-      <DnaThinkingIcon size={26} />
+      <DnaThinkingIcon size={18} wrapperClassName="skelly-thinking-dna--md" />
     </div>
   );
 }

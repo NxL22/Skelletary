@@ -63,6 +63,13 @@ function describeStatus(status, body) {
       body?.error,
     );
   }
+  if (status === 422) {
+    return new AssistantError(
+      "PRIVACY_BLOCKED",
+      body?.error || "Detectamos datos que no deben guardarse.",
+      body?.detail || body?.error,
+    );
+  }
   if (status >= 500) {
     return new AssistantError(
       "SERVER",
@@ -179,6 +186,7 @@ export async function invokeAssistant({ input, templateCode = null }) {
     warnings: Array.isArray(data.warnings) ? data.warnings : [],
     usage: data.usage ?? null,
     isFallback: Boolean(data.isFallback),
+    timings: data.timings ?? null,
   };
 }
 
@@ -200,6 +208,7 @@ export async function invokeAssistantStream({
   input,
   templateCode = null,
   onDelta = null,
+  onPreview = null,
   onStart = null,
   signal = null,
 }) {
@@ -270,6 +279,7 @@ export async function invokeAssistantStream({
   let warnings = [];
   let question = null;
   let isFallback = false;
+  let timings = null;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -312,11 +322,17 @@ export async function invokeAssistantStream({
         continue;
       }
 
+      if (parsed?.type === "preview" && typeof parsed.text === "string") {
+        onPreview?.(parsed.text);
+        continue;
+      }
+
       if (parsed?.type === "done") {
         finalText = parsed.text ?? "";
         question = typeof parsed.question === "string" ? parsed.question : null;
         warnings = Array.isArray(parsed.warnings) ? parsed.warnings : [];
         isFallback = Boolean(parsed.isFallback);
+        timings = parsed.timings ?? null;
         continue;
       }
 
@@ -341,6 +357,7 @@ export async function invokeAssistantStream({
     warnings,
     usage,
     isFallback,
+    timings,
   };
 }
 
@@ -397,5 +414,10 @@ export async function submitAssistantFeedback({
   return {
     appended: Boolean(data.appended),
     reason: data.reason ?? null,
+    feedbackId: data.feedbackId ?? null,
+    learningStatus: data.learningStatus ?? null,
+    activated: Boolean(data.activated),
+    confidence: Number.isFinite(Number(data.confidence)) ? Number(data.confidence) : null,
+    supportCount: Number(data.supportCount ?? 0),
   };
 }

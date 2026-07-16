@@ -11,7 +11,7 @@ function GuideCard({ icon: Icon, label, title, description, children }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">{label}</p>
+          <p className="text-[14px] uppercase tracking-[0.2em] text-slate-500">{label}</p>
           <h3 className="mt-2 font-display text-xl font-semibold text-white">{title}</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
         </div>
@@ -93,7 +93,7 @@ export default function HelpModal({
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_30%)]" />
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs uppercase tracking-[0.22em] text-cyan">Skelly onboarding</p>
+              <p className="text-[15px] uppercase tracking-[0.22em] text-cyan">Skelly onboarding</p>
               <h3 className="mt-2 font-display text-2xl font-semibold text-white sm:text-3xl">
                 Busca por fragmentos, ajusta tus atajos y copia rapido.
               </h3>
@@ -153,7 +153,7 @@ export default function HelpModal({
             title="Como escribir variables dentro del texto"
             description="Skelletary siempre te guiara con al menos un antecedente editable antes de copiar."
           >
-            <div className="rounded-[24px] border border-white/10 bg-slate-950/45 p-4 font-mono text-[13px] leading-6 text-cyan">
+            <div className="rounded-[24px] border border-white/10 bg-slate-950/45 p-4 font-mono text-[16px] leading-7 text-cyan">
               ANTECEDENTES CLINICOS: {"{{antecedente}}"}
               <br />
               HALLAZGOS: lesion de {"{{tamano}}"} mm en {"{{localizacion}}"}.

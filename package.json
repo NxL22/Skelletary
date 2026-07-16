@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node --test test/*.test.js",
     "preview": "vite preview",
-    "user:create": "node scripts/create-user.mjs"
+    "user:create": "node scripts/create-user.mjs",
+    "assistant:sync": "node scripts/sync-assistant-templates.mjs"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",

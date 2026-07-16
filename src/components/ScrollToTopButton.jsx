@@ -26,7 +26,7 @@ export default function ScrollToTopButton() {
       type="button"
       onClick={scrollToTop}
       aria-label="Volver arriba"
-      className={`fixed bottom-5 right-4 z-30 inline-flex h-12 w-12 items-center justify-center rounded-full border border-cyan/20 bg-[linear-gradient(135deg,rgba(10,15,24,0.94),rgba(32,55,72,0.92))] text-cyan shadow-[0_18px_40px_rgba(79,209,197,0.18)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-cyan/40 hover:text-white hover:shadow-[0_22px_46px_rgba(79,209,197,0.26)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/60 sm:bottom-7 sm:right-6 lg:bottom-8 lg:right-8 ${
+      className={`fixed bottom-5 right-4 z-30 inline-flex h-12 w-12 items-center justify-center rounded-full border border-cyan/20 bg-[linear-gradient(135deg,rgba(10,15,24,0.94),rgba(32,55,72,0.92))] text-cyan shadow-[0_18px_40px_rgba(79,209,197,0.18)] backdrop-blur-xl transition duration-300 hover:border-cyan/40 hover:text-white hover:shadow-[0_22px_46px_rgba(79,209,197,0.26)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/60 sm:bottom-7 sm:right-6 lg:bottom-8 lg:right-8 ${
         visible
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none translate-y-4 opacity-0"

@@ -310,6 +310,7 @@ export function buildPrompt({
   candidateTemplates = [],
   dictionaryFallback = "",
   examplesBlock = "",
+  memoryBlock = "",
 }) {
   const parts = [
     ALGORITHM_BLOCK,
@@ -339,6 +340,10 @@ export function buildPrompt({
 
   if (examplesBlock && examplesBlock.trim()) {
     parts.push(examplesBlock);
+  }
+
+  if (memoryBlock && memoryBlock.trim()) {
+    parts.push(memoryBlock);
   }
 
   return parts.join("\n\n---\n\n");

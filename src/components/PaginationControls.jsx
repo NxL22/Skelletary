@@ -70,7 +70,7 @@ export default function PaginationControls({
     <div className="glass-panel rounded-[24px] p-4 shadow-card">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Paginación</p>
+          <p className="text-[14px] uppercase tracking-[0.2em] text-slate-500">Paginación</p>
           <p className="mt-2 text-sm leading-6 text-slate-300">
             Mostrando {startItem}-{endItem} de {totalItems} plantillas. Página {currentPage} de {totalPages}.
           </p>

@@ -106,7 +106,7 @@ export default function SettingsModal({
                 className="field-shell"
               />
               {profile?.email ? (
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-[15px] text-slate-500">
                   Correo de la cuenta: <span className="font-mono">{profile.email}</span>
                 </p>
               ) : null}
@@ -136,7 +136,7 @@ export default function SettingsModal({
         >
           <div className="grid w-full gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
             <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-4 text-sm text-slate-300">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Cuenta</div>
+              <div className="text-[14px] uppercase tracking-[0.18em] text-slate-500">Cuenta</div>
               <div className="mt-2 font-display text-xl text-white">{accountLabel}</div>
               {profile?.email ? (
                 <div className="mt-2 break-all text-sm text-slate-400">{profile.email}</div>
@@ -144,7 +144,7 @@ export default function SettingsModal({
             </div>
 
             <div className="rounded-2xl border border-cyan/15 bg-cyan/10 px-4 py-4 text-sm text-slate-100">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-cyan">
+              <div className="text-[14px] uppercase tracking-[0.18em] text-cyan">
                 Estado actual
               </div>
               <div className="mt-2 font-medium text-white">{accessState?.label || "Acceso pendiente"}</div>

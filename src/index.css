@@ -177,7 +177,7 @@ textarea,
 }
 
 .placeholder-chip {
-  @apply rounded-full border border-rose/30 bg-rose/10 px-2 py-0.5 font-mono text-[11px] font-medium text-white;
+  @apply rounded-full border border-rose/30 bg-rose/10 px-2 py-0.5 font-mono text-[14px] font-medium text-white;
 }
 
 .field-shell {
@@ -185,11 +185,11 @@ textarea,
 }
 
 .button-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan/20 transition hover:-translate-y-0.5 hover:bg-cyan/90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:bg-cyan;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan/20 transition hover:bg-cyan/90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-cyan;
 }
 
 .button-secondary {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:-translate-y-0.5 hover:border-cyan/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-white/10 disabled:hover:bg-white/5;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:border-cyan/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-white/10 disabled:hover:bg-white/5;
 }
 
 .button-no-lift:hover,
@@ -217,15 +217,15 @@ textarea,
 .button-secondary:focus-visible > svg,
 .button-danger:hover > svg,
 .button-danger:focus-visible > svg {
-  transform: translateY(-1px) scale(1.04);
+  transform: scale(1.04);
 }
 
 .button-danger {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-rose/30 bg-rose/10 px-4 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-rose/15;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-rose/30 bg-rose/10 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-rose/15;
 }
 
 .badge-soft {
-  @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300;
+  @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[15px] text-slate-300;
 }
 
 .radiology-badge {
@@ -527,7 +527,6 @@ textarea,
 }
 
 .login-primary-button:hover {
-  transform: translateY(-2px);
   box-shadow: 0 24px 52px rgba(54, 214, 222, 0.32);
 }
 
@@ -537,7 +536,6 @@ textarea,
 
 .login-secondary-button:hover {
   @apply border-cyan/25 bg-white/[0.05];
-  transform: translateY(-2px);
 }
 
 .login-noise {
@@ -629,6 +627,30 @@ textarea,
 .login-footer-copy {
   color: rgba(148, 163, 184, 0.88);
   text-shadow: 0 0 18px rgba(125, 211, 252, 0.08);
+}
+
+/* En celular el SkellyThinking achica sus iconos DNA para que el texto no se corte.
+   En desktop (>=640px) vuelven al tamano original de 30/26px pisando el style inline. */
+.skelly-thinking-dna--lg {
+  width: 22px;
+  height: 22px;
+}
+
+.skelly-thinking-dna--md {
+  width: 18px;
+  height: 18px;
+}
+
+@media (min-width: 640px) {
+  .skelly-thinking-dna--lg {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .skelly-thinking-dna--md {
+    width: 26px !important;
+    height: 26px !important;
+  }
 }
 
 /* El corazon late con un doble pulso suave para sentirse vivo sin romper la calma de la interfaz. */

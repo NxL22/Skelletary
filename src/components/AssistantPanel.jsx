@@ -78,6 +78,7 @@ export default function AssistantPanel({
   // reenvia como input nuevo.
   const [pendingQuestion, setPendingQuestion] = useState(null);
   const [originalInput, setOriginalInput] = useState("");
+  const [lastRequestInput, setLastRequestInput] = useState("");
 
   // Modo edicion del output (se activa al apretar "Lo retoque").
   const [isEditingOutput, setIsEditingOutput] = useState(false);
@@ -138,6 +139,11 @@ export default function AssistantPanel({
     setOutput("");
     setPendingQuestion(null);
     setOriginalInput(baseOriginal);
+    setLastRequestInput(
+      pendingQuestion && originalInput
+        ? `${originalInput}\nRespuesta a la aclaracion: ${trimmed}`
+        : trimmed,
+    );
     setIsFallback(false);
 
     // Mientras el LLM esta pensando NO mostramos el texto crudo del stream.
@@ -150,10 +156,8 @@ export default function AssistantPanel({
           setUsage(initialUsage);
         }
       },
-      // onDelta existe solo para mantener la firma del helper; descartamos
-      // los tokens intermedios a proposito para no mostrar el pensamiento
-      // crudo del LLM.
       onDelta: () => {},
+      onPreview: (safePreview) => setOutput(safePreview),
     })
       .then((result) => {
         // Si el LLM devolvio una pregunta breve, mostramos la pregunta
@@ -234,6 +238,7 @@ export default function AssistantPanel({
     setLastSubmittedFeedback(null);
     setPendingQuestion(null);
     setOriginalInput("");
+    setLastRequestInput("");
     setIsFallback(false);
     inputRef.current?.focus();
   }
@@ -244,7 +249,7 @@ export default function AssistantPanel({
     // El output quedo tal cual Skelly lo entrego. Es un feedback positivo.
     const payload = {
       type: "positive",
-      originalInput: input,
+      originalInput: lastRequestInput,
       skellyOutput: output,
       humanOutput: output,
     };
@@ -275,7 +280,7 @@ export default function AssistantPanel({
     }
     const payload = {
       type: "edited",
-      originalInput: input,
+      originalInput: lastRequestInput,
       skellyOutput: output,
       humanOutput: cleaned,
     };
@@ -316,7 +321,7 @@ export default function AssistantPanel({
             <Sparkles className="h-4 w-4" strokeWidth={2.4} />
           </span>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">
+            <p className="text-[14px] uppercase tracking-[0.24em] text-slate-400">
               Skelly te asiste
             </p>
             <p className="font-display text-base font-semibold text-white">
@@ -354,7 +359,7 @@ export default function AssistantPanel({
           <div>
             <label
               htmlFor="assistant-input"
-              className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-slate-500"
+              className="mb-2 block text-[14px] uppercase tracking-[0.2em] text-slate-500"
             >
               Mensaje para Skelly
             </label>
@@ -393,8 +398,8 @@ export default function AssistantPanel({
                   aria-label="Enviar mensaje a Skelly"
                   disabled={!canSubmit}
                   className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan text-slate-950 shadow-lg shadow-cyan/25 transition duration-200 ${
-                    canSubmit ? "hover:-translate-y-0.5 hover:bg-cyan/90" : ""
-                  } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:bg-cyan`}
+                    canSubmit ? "hover:bg-cyan/90" : ""
+                  } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-cyan`}
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -405,7 +410,7 @@ export default function AssistantPanel({
               </div>
             </div>
 
-            <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-400">
+            <div className="mt-2 flex items-center gap-2 text-[14px] text-slate-400">
               <Sparkles className="h-3.5 w-3.5 text-cyan" />
               {pendingQuestion
                 ? "Enter para regenerar con tu respuesta. Shift+Enter para nueva linea."
@@ -423,7 +428,7 @@ export default function AssistantPanel({
               de la seccion cuando aparecen o desaparecen. */}
           <div ref={outputRef}>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <label className="block text-[11px] uppercase tracking-[0.2em] text-slate-500">
+              <label className="block text-[14px] uppercase tracking-[0.2em] text-slate-500">
                 Resultado
               </label>
               {/* Boton Copy: siempre presente, invisible cuando no aplica.
@@ -470,7 +475,7 @@ export default function AssistantPanel({
                   <p className="mt-1">{pendingQuestion}</p>
                 </div>
                 {originalInput ? (
-                  <p className="text-[11px] leading-5 text-slate-500">
+                  <p className="text-[14px] leading-6 text-slate-500">
                     Contexto original: <span className="text-slate-300">{originalInput}</span>
                   </p>
                 ) : null}
@@ -483,14 +488,14 @@ export default function AssistantPanel({
             <div className="min-h-[240px]">
               {output && isEditingOutput ? (
                 <div className="space-y-3">
-                  <p className="text-xs leading-5 text-slate-400">
+                  <p className="text-[15px] leading-6 text-slate-400">
                     Edita el informe. Skelly va a aprender de tu version para futuros informes.
                   </p>
                   <textarea
                     value={editedOutput}
                     onChange={(event) => setEditedOutput(event.target.value)}
                     rows={10}
-                    className="w-full resize-y rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-3 font-mono text-[13px] leading-6 text-slate-100 focus:border-cyan/40 focus:outline-none focus:ring-2 focus:ring-cyan/40"
+                    className="w-full resize-y rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-3 font-mono text-[16px] leading-7 text-slate-100 focus:border-cyan/40 focus:outline-none focus:ring-2 focus:ring-cyan/40"
                   />
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -516,7 +521,7 @@ export default function AssistantPanel({
                 </div>
 ) : (
                 <pre
-                  className={`max-h-72 min-h-[240px] overflow-auto whitespace-pre-wrap rounded-2xl border px-3 py-3 text-[13px] leading-6 ${
+                  className={`max-h-72 min-h-[240px] overflow-auto whitespace-pre-wrap rounded-2xl border px-3 py-3 text-[16px] leading-7 ${
                     isFallback
                       ? "border-lavender/30 bg-lavender/[0.08] text-lavender"
                       : "border-white/10 bg-slate-950/80 font-mono text-slate-100"
@@ -552,7 +557,7 @@ export default function AssistantPanel({
                   <button
                     type="button"
                     onClick={handleFeedbackPositive}
-                    className="inline-flex items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1.5 text-sm font-medium text-cyan transition hover:-translate-y-0.5 hover:bg-cyan/15"
+                    className="inline-flex items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-3 py-1.5 text-sm font-medium text-cyan transition hover:bg-cyan/15"
                   >
                     <ThumbsUp className="h-4 w-4" />
                     Sirvio tal cual, guardar
@@ -560,7 +565,7 @@ export default function AssistantPanel({
                   <button
                     type="button"
                     onClick={handleStartEdit}
-                    className="inline-flex items-center gap-2 rounded-full border border-lavender/20 bg-lavender/10 px-3 py-1.5 text-sm font-medium text-lavender transition hover:-translate-y-0.5 hover:bg-lavender/15"
+                    className="inline-flex items-center gap-2 rounded-full border border-lavender/20 bg-lavender/10 px-3 py-1.5 text-sm font-medium text-lavender transition hover:bg-lavender/15"
                   >
                     <PencilLine className="h-4 w-4" />
                     Lo retoque y guardo version final
@@ -583,7 +588,7 @@ export default function AssistantPanel({
               }}
             >
               {warnings.length > 0 && !error && !isFallback ? (
-                <div className="relative rounded-2xl border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-xs leading-5 text-amber-300">
+                <div className="relative rounded-2xl border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-[15px] leading-6 text-amber-300">
                   {warnings.map((warning) => (
                     <p key={warning}>{warning}</p>
                   ))}
@@ -610,7 +615,7 @@ export default function AssistantPanel({
           >
             <p className="font-medium">{error.message}</p>
             {error.detail ? (
-              <p className="mt-1 text-xs leading-5 opacity-80">{error.detail}</p>
+              <p className="mt-1 text-[15px] leading-6 opacity-80">{error.detail}</p>
             ) : null}
           </div>
         </div>

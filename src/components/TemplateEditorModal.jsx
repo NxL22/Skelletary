@@ -144,7 +144,7 @@ export default function TemplateEditorModal({
             className="field-shell font-mono"
             placeholder="Ej. ecoabdnormal, abdomen normal"
           />
-          <p className="mt-2 text-xs leading-5 text-slate-500">
+          <p className="mt-2 text-[15px] leading-6 text-slate-500">
             Puedes cambiar estos atajos cuando quieras. Escribe varios separados por coma y el primero se usa como atajo principal.
           </p>
         </label>
@@ -167,13 +167,13 @@ export default function TemplateEditorModal({
           <textarea
             value={form.content}
             onChange={(event) => updateField("content", event.target.value)}
-            className="field-shell min-h-[360px] resize-y font-mono text-[13px] leading-6"
+            className="field-shell min-h-[360px] resize-y font-mono text-[16px] leading-7"
             placeholder={"ANTECEDENTES CLINICOS:\n\nHALLAZGOS:\n...\n\nIMPRESION:\n..."}
           />
-          <p className="mt-2 text-xs leading-5 text-slate-500">
+          <p className="mt-2 text-[15px] leading-6 text-slate-500">
             {getVoiceUsageHint("medical-content")}
           </p>
-          <p className="mt-2 text-xs leading-5 text-slate-500">
+          <p className="mt-2 text-[15px] leading-6 text-slate-500">
             Si no escribes <span className="font-mono">{"{{antecedente}}"}</span>, Skelletary lo agregara al usar la plantilla y, si queda en blanco, copiara <span className="font-medium text-slate-300">Sin diagnóstico</span>.
           </p>
         </label>

@@ -12,7 +12,7 @@ export default function TemplateContent({ text, compact = false }) {
   return (
     <pre
       className={`m-0 whitespace-pre-wrap break-words font-body text-sm leading-6 text-slate-200 ${
-        compact ? "max-h-32 overflow-hidden text-[13px]" : ""
+        compact ? "max-h-32 overflow-hidden text-[16px]" : ""
       }`}
     >
       {parts.map((part, index) =>

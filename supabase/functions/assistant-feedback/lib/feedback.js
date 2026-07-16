@@ -28,7 +28,7 @@
 //   - PHI no queda en Postgres, mas facil de mover/borrar.
 
 const MAX_FEEDBACK_ENTRIES = 50;
-const DEFAULT_FEEDBACK_LIMIT = 10;
+const DEFAULT_FEEDBACK_LIMIT = 4;
 const STORAGE_PATH_PREFIX = "feedback";
 const STORAGE_BUCKET = "assistant-feedback";
 
