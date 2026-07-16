@@ -78,9 +78,15 @@ function CategoryPageControls({ currentPage, totalPages, totalItems, pageSize, o
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[14px] uppercase tracking-[0.2em] text-slate-500">Categorias</p>
-          <p className="mt-1 text-[15px] leading-6 text-slate-400">
-            {startItem}-{endItem} de {totalItems}. Pagina {currentPage} de {totalPages}.
-          </p>
+          <div className="mt-1 text-[15px] leading-6 text-slate-400">
+            <p>
+              {startItem}-{endItem} de {totalItems}.
+            </p>
+            <hr className="my-1 border-white/10" />
+            <p>
+              Pagina {currentPage} de {totalPages}.
+            </p>
+          </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
