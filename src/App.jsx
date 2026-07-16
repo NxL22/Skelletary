@@ -29,6 +29,7 @@ import ToastStack from "./components/ToastStack";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import AuthScreen from "./components/AuthScreen";
 import PasswordChangeModal from "./components/PasswordChangeModal";
+import DeleteTemplateModal from "./components/DeleteTemplateModal";
 import SkellyLab from "./components/SkellyLab";
 import { copyText, playCopyFeedback } from "./lib/clipboard";
 import { normalizeProfile, resolveAccessState } from "./lib/access";
@@ -245,6 +246,7 @@ export default function App() {
   const [activeView, setActiveView] = useState(SPECIAL_VIEWS.all);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+  const [deleteTemplate, setDeleteTemplate] = useState(null);
   const [editorState, setEditorState] = useState({ open: false, template: null });
   const [variableState, setVariableState] = useState({ open: false, template: null });
   const [pinMode, setPinMode] = useState(null);
@@ -856,21 +858,24 @@ export default function App() {
     }
   }
 
-  async function handleDelete(template) {
+  function handleDelete(template) {
     if (!template.isUserOwned) {
       pushToast("Edita primero esta plantilla para poder personalizarla y luego eliminarla.", "info");
       return;
     }
+    setDeleteTemplate(template);
+  }
 
-    if (!window.confirm(`Eliminar la plantilla "${template.title}"?`)) {
-      return;
-    }
+  async function handleDeleteConfirmed(confirmation) {
+    const template = deleteTemplate;
+    if (!template || confirmation.trim().toLowerCase() !== "eliminar") return;
 
     try {
       await deleteUserTemplateRemote(template.id);
       setTemplates((current) => current.filter((entry) => entry.id !== template.id));
       closeEditor();
       setSelectedTemplateId(null);
+      setDeleteTemplate(null);
       pushToast("Plantilla eliminada", "success");
     } catch (error) {
       pushToast(error.message || "No pudimos eliminar la plantilla.", "error");
@@ -1138,7 +1143,6 @@ export default function App() {
                         onOpen={openTemplate}
                         onCopy={handleCopy}
                         onToggleFavorite={handleToggleFavorite}
-                        onDelete={handleDelete}
                       />
                     </div>
                   ))}
@@ -1206,6 +1210,13 @@ export default function App() {
         onEdit={openEditor}
         onDelete={handleDelete}
         onUpdateShortcuts={handleUpdateShortcuts}
+      />
+
+      <DeleteTemplateModal
+        template={deleteTemplate}
+        open={Boolean(deleteTemplate)}
+        onClose={() => setDeleteTemplate(null)}
+        onConfirm={handleDeleteConfirmed}
       />
 
       <TemplateEditorModal
