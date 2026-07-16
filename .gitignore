@@ -19,3 +19,5 @@ supabase/.temp/
 /AGENTS.md
 /supabase/README.md
 /scripts/analisis-plantillas.txt
+/supabase/knowledge/
+/supabase/email-templates/
