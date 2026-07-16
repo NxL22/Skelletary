@@ -71,9 +71,15 @@ export default function PaginationControls({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <p className="text-[14px] uppercase tracking-[0.2em] text-slate-500">Paginación</p>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
-            Mostrando {startItem}-{endItem} de {totalItems} plantillas. Página {currentPage} de {totalPages}.
-          </p>
+          <div className="mt-2 text-sm leading-6 text-slate-300">
+            <p>
+              {startItem}-{endItem} de {totalItems}.
+            </p>
+            <hr className="my-1.5 border-white/10" />
+            <p>
+              Página {currentPage} de {totalPages}.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
