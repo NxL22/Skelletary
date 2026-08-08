@@ -2,7 +2,7 @@ import {
   ArrowLeft,
   Check,
   ClipboardCheck,
-  Copy,
+  Heart,
   LockKeyhole,
   Plus,
   RotateCcw,
@@ -151,6 +151,9 @@ export default function BotonesEcoPage({
       await copyText(card.copyText);
       void playCopyFeedback();
       setCopiedId(card.id);
+      // La busqueda solo se limpia despues de copiar bien: asi el usuario no
+      // pierde su contexto si el navegador bloquea el portapapeles.
+      setQuery("");
       toastHandlerRef.current("Texto copiado", "success");
 
       if (copyTimeoutRef.current) {
@@ -270,13 +273,13 @@ export default function BotonesEcoPage({
             <div className="flex min-w-0 items-center gap-4">
               <a
                 href="#/"
-                className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-2xl border border-cyan/25 bg-white shadow-[0_14px_32px_rgba(2,8,23,0.28)] transition hover:border-cyan/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/80"
+                className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-full border border-cyan/25 bg-slate-950/70 shadow-[0_14px_32px_rgba(2,8,23,0.28)] transition hover:border-cyan/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan/80"
                 aria-label="Volver a Skelletary"
               >
                 <img
-                  src={getPublicAssetPath("imagenes de Skelly/skelly_logo.webp")}
+                  src={getPublicAssetPath("imagenes de Skelly/skelletary-eco-avatar.png")}
                   alt="Skelletary"
-                  className="h-full w-full object-contain p-1"
+                  className="h-full w-full object-contain"
                 />
               </a>
               <div className="min-w-0">
@@ -349,7 +352,7 @@ export default function BotonesEcoPage({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="field-shell rounded-xl pl-11 pr-11 placeholder:text-slate-400/70"
+              className="field-shell !rounded-xl !pl-12 !pr-12 placeholder:text-slate-400/70"
               placeholder="Buscar por nombre, grupo o texto"
             />
             {query ? (
@@ -432,8 +435,10 @@ export default function BotonesEcoPage({
 
         <footer className="flex flex-col gap-2 border-t border-white/10 py-5 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span className="inline-flex items-center gap-2">
-            <Copy className="h-4 w-4 text-cyan" />
-            Copiar es la accion principal. Editar permanece separado para no interrumpir el flujo.
+            <span>Hecho con cariño para mi esposa</span>
+            <span className="footer-heart-shell" aria-hidden="true">
+              <Heart className="footer-heart-icon h-3.5 w-3.5 fill-current text-rose" />
+            </span>
           </span>
           <span className="text-xs uppercase tracking-[0.16em] text-slate-600">Skelletary · Botones Eco</span>
         </footer>

@@ -37,14 +37,14 @@ const VISUAL_ICONS = {
   general: Sparkles,
 };
 
-const GROUP_ACCENTS = {
-  "abdomen-pelvis": "border-cyan/20 bg-cyan/[0.06] text-cyan",
-  cuello: "border-lavender/25 bg-lavender/[0.06] text-lavender",
-  genitourinario: "border-rose/25 bg-rose/[0.06] text-rose",
-  "doppler-vascular": "border-emerald-300/25 bg-emerald-300/[0.06] text-emerald-200",
-  musculoesqueletico: "border-amber-300/25 bg-amber-300/[0.06] text-amber-200",
-  "partes-blandas": "border-sky-300/25 bg-sky-300/[0.06] text-sky-200",
-  "mis-tarjetas": "border-white/15 bg-white/[0.06] text-slate-200",
+const GROUP_ICON_ACCENTS = {
+  "abdomen-pelvis": "text-cyan",
+  cuello: "text-lavender",
+  genitourinario: "text-rose",
+  "doppler-vascular": "text-emerald-200",
+  musculoesqueletico: "text-amber-200",
+  "partes-blandas": "text-sky-200",
+  "mis-tarjetas": "text-slate-200",
 };
 
 // Cada familia conserva una identidad cromatica, pero la expresamos como una
@@ -96,15 +96,16 @@ function VisualIcon({ visualKey, className = "h-8 w-8" }) {
 export default function BotonesEcoCard({ card, copied, onCopy, onEdit, canEdit }) {
   const [imageFailed, setImageFailed] = useState(false);
   const imagePath = getEcoCardImagePath(card);
-  const accentClass = GROUP_ACCENTS[card.groupId] || GROUP_ACCENTS["mis-tarjetas"];
+  const iconAccentClass = GROUP_ICON_ACCENTS[card.groupId] || GROUP_ICON_ACCENTS["mis-tarjetas"];
   const theme = GROUP_THEMES[card.groupId] || GROUP_THEMES["mis-tarjetas"];
+  const imageFrameClass = `relative flex h-[112px] w-[136px] items-center justify-center overflow-hidden rounded-[18px] border ${theme.frame} bg-slate-900/55 shadow-[0_12px_30px_rgba(2,8,23,0.2)]`;
 
   return (
-    <article className="relative flex min-h-[252px] flex-col overflow-hidden rounded-[20px] border border-white/10 bg-slate-900/60 shadow-card focus-within:border-cyan/40">
+    <article className="relative flex min-h-[264px] h-full flex-col overflow-hidden rounded-[20px] border border-white/10 bg-slate-900/60 shadow-card focus-within:border-cyan/40">
       <button
         type="button"
         onClick={() => onCopy(card)}
-        className="relative flex min-h-[208px] flex-1 flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan/80 active:bg-white/[0.02]"
+        className="relative flex min-h-0 flex-1 flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan/80 active:bg-white/[0.02]"
         aria-label={`Copiar ${card.name}`}
       >
         <span
@@ -112,16 +113,16 @@ export default function BotonesEcoCard({ card, copied, onCopy, onEdit, canEdit }
           aria-hidden="true"
         />
 
-        <div className="flex items-center justify-end px-4 pt-4">
+        <div className="flex min-h-8 items-center justify-end px-4 pt-4">
           <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${copied ? "text-cyan" : "text-slate-400"}`}>
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             {copied ? "Copiado" : "Copiar"}
           </span>
         </div>
 
-        <div className="flex flex-1 items-center justify-center px-5 py-3">
+        <div className="flex h-[136px] shrink-0 items-center justify-center px-5 py-3">
           {imagePath && !imageFailed ? (
-            <div className={`relative flex h-[112px] w-[136px] items-center justify-center overflow-hidden rounded-[18px] border ${theme.frame} bg-slate-900/55 shadow-[0_12px_30px_rgba(2,8,23,0.2)]`}>
+            <div className={imageFrameClass}>
               <span
                 className={`pointer-events-none absolute -inset-6 rounded-full blur-2xl ${theme.glow}`}
                 aria-hidden="true"
@@ -135,14 +136,18 @@ export default function BotonesEcoCard({ card, copied, onCopy, onEdit, canEdit }
               />
             </div>
           ) : (
-            <div className={`flex h-[104px] w-[126px] items-center justify-center rounded-[18px] border ${accentClass}`}>
-              <VisualIcon visualKey={card.visualKey} className="h-11 w-11" />
+            <div className={imageFrameClass}>
+              <span
+                className={`pointer-events-none absolute -inset-6 rounded-full blur-2xl ${theme.glow}`}
+                aria-hidden="true"
+              />
+              <VisualIcon visualKey={card.visualKey} className={`relative h-11 w-11 ${iconAccentClass}`} />
             </div>
           )}
         </div>
 
-        <div className="px-4 pb-4">
-          <h3 className="min-h-[3.25rem] font-display text-[17px] font-semibold leading-6 text-white">
+        <div className="flex min-h-[88px] flex-1 flex-col px-4 pb-4">
+          <h3 className="h-[3.25rem] overflow-hidden font-display text-[17px] font-semibold leading-6 text-white line-clamp-2">
             {card.name}
           </h3>
           <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-slate-400/80">
@@ -151,7 +156,7 @@ export default function BotonesEcoCard({ card, copied, onCopy, onEdit, canEdit }
         </div>
       </button>
 
-      <div className="flex items-center justify-end border-t border-white/10 px-4 py-2.5">
+      <div className="flex min-h-12 shrink-0 items-center justify-end border-t border-white/10 px-4 py-2.5">
         <button
           type="button"
           onClick={() => onEdit(card)}

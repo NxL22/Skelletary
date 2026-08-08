@@ -32,6 +32,12 @@ export const ECO_VISUAL_OPTIONS = [
 ];
 
 const DEFAULT_ECO_CARD_IDS = new Set(defaultEcoCards.map((card) => card.id));
+// La tarjeta de mano puede existir como personal, pero debe conservar el
+// mismo lenguaje visual de las oficiales. Reutilizamos su imagen local sin
+// cambiar la propiedad ni el origen de la tarjeta guardada en la nube.
+const PERSONAL_ECO_IMAGES_BY_VISUAL_KEY = {
+  mano: "eco-mano.png",
+};
 const GROUP_IDS = new Set(ECO_GROUPS.map((group) => group.id));
 const REMOVED_LEGACY_IDS = new Set(["eco-muslo"]);
 const REMOVED_LEGACY_NAMES = new Set(["eco muslo", "eco gluteo"]);
@@ -225,11 +231,16 @@ export function groupEcoCards(cards = []) {
 }
 
 export function getEcoCardImagePath(card) {
-  if (!card?.isDefault || !DEFAULT_ECO_CARD_IDS.has(card.id)) {
+  if (!card) {
     return null;
   }
 
-  return getPublicAssetPath(`botones-eco/tarjetas/${card.id}.png`);
+  if (DEFAULT_ECO_CARD_IDS.has(card.id)) {
+    return getPublicAssetPath(`botones-eco/tarjetas/${card.id}.png`);
+  }
+
+  const personalImage = PERSONAL_ECO_IMAGES_BY_VISUAL_KEY[card.visualKey];
+  return personalImage ? getPublicAssetPath(`botones-eco/tarjetas/${personalImage}`) : null;
 }
 
 export function createEcoCard(existingCards = [], form = {}) {
