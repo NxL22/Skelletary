@@ -31,6 +31,7 @@ import AuthScreen from "./components/AuthScreen";
 import PasswordChangeModal from "./components/PasswordChangeModal";
 import DeleteTemplateModal from "./components/DeleteTemplateModal";
 import SkellyLab from "./components/SkellyLab";
+import BotonesEcoPage from "./components/BotonesEcoPage";
 import { copyText, playCopyFeedback } from "./lib/clipboard";
 import { normalizeProfile, resolveAccessState } from "./lib/access";
 import { submitAssistantFeedback } from "./lib/assistant";
@@ -102,6 +103,25 @@ function getViewportWidth() {
   }
 
   return window.innerWidth;
+}
+
+function useHashRoute() {
+  const [hash, setHash] = useState(() =>
+    typeof window === "undefined" ? "" : window.location.hash,
+  );
+
+  useEffect(() => {
+    function syncHash() {
+      setHash(window.location.hash);
+    }
+
+    window.addEventListener("hashchange", syncHash);
+    syncHash();
+
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, []);
+
+  return hash;
 }
 
 function useElementMetrics(element, fallbackMetrics) {
@@ -235,6 +255,7 @@ function getViewHeading(activeView) {
 
 export default function App() {
   const backendConfigured = isSupabaseConfigured();
+  const hashRoute = useHashRoute();
   const viewportSize = useViewportSize();
   const viewportWidth = viewportSize.width;
   const [templateGridHost, setTemplateGridHost] = useState(null);
@@ -1013,8 +1034,31 @@ export default function App() {
 
   // GitHub Pages no resuelve rutas del servidor. El hash mantiene una ruta
   // privada estable sin agregar un router ni romper recargas del sitio.
-  if (window.location.hash === "#/skelly-lab") {
+  if (hashRoute === "#/skelly-lab") {
     return <SkellyLab />;
+  }
+
+  if (hashRoute === "#/botones-eco") {
+    return (
+      <>
+        <BotonesEcoPage
+          session={session}
+          editingEnabled={editingEnabled}
+          editUnlocked={editUnlocked}
+          onPushToast={pushToast}
+          onUnlockClick={() => setPinMode("unlock")}
+        />
+
+        <PinModal
+          open={Boolean(pinMode)}
+          mode={pinMode}
+          onClose={() => setPinMode(null)}
+          onSubmit={handlePinSubmit}
+        />
+
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
   }
 
   return (

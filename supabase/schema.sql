@@ -73,6 +73,23 @@ create table if not exists public.user_templates (
 
 create index if not exists user_templates_user_id_idx on public.user_templates(user_id);
 
+-- Botones Eco es una herramienta separada de la biblioteca de informes. Sus
+-- personalizaciones viven en una tabla propia para que nunca se mezclen con
+-- las plantillas oficiales o personales de Skelletary.
+create table if not exists public.user_eco_cards (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  card_id text not null,
+  group_id text not null default 'mis-tarjetas',
+  name text not null,
+  copy_text text not null,
+  visual_key text not null default 'general',
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  primary key (user_id, card_id)
+);
+
+create index if not exists user_eco_cards_user_id_idx on public.user_eco_cards(user_id);
+
 -- Tabla de rate limiting del modulo Asistente.
 -- Lleva el conteo de envios por usuaria dentro de una ventana movil de 12h.
 -- El Edge Function hace el UPSERT con service role al validar cada request.
@@ -191,6 +208,11 @@ create trigger user_templates_set_updated_at
 before update on public.user_templates
 for each row execute function public.set_updated_at();
 
+drop trigger if exists user_eco_cards_set_updated_at on public.user_eco_cards;
+create trigger user_eco_cards_set_updated_at
+before update on public.user_eco_cards
+for each row execute function public.set_updated_at();
+
 drop trigger if exists user_template_stats_set_updated_at on public.user_template_stats;
 create trigger user_template_stats_set_updated_at
 before update on public.user_template_stats
@@ -200,6 +222,7 @@ alter table public.profiles enable row level security;
 alter table public.core_templates enable row level security;
 alter table public.user_templates enable row level security;
 alter table public.user_template_stats enable row level security;
+alter table public.user_eco_cards enable row level security;
 
 -- La biblioteca oficial solo se comparte en lectura con usuarios autenticados
 -- cuyo perfil tenga habilitada esa biblioteca y acceso comercial vigente.
@@ -287,6 +310,35 @@ for update
 to authenticated
 using (auth.uid() = user_id and public.user_has_app_access(auth.uid()))
 with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
+
+drop policy if exists "user_eco_cards_read_own" on public.user_eco_cards;
+create policy "user_eco_cards_read_own"
+on public.user_eco_cards
+for select
+to authenticated
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
+
+drop policy if exists "user_eco_cards_insert_own" on public.user_eco_cards;
+create policy "user_eco_cards_insert_own"
+on public.user_eco_cards
+for insert
+to authenticated
+with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
+
+drop policy if exists "user_eco_cards_update_own" on public.user_eco_cards;
+create policy "user_eco_cards_update_own"
+on public.user_eco_cards
+for update
+to authenticated
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()))
+with check (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
+
+drop policy if exists "user_eco_cards_delete_own" on public.user_eco_cards;
+create policy "user_eco_cards_delete_own"
+on public.user_eco_cards
+for delete
+to authenticated
+using (auth.uid() = user_id and public.user_has_app_access(auth.uid()));
 
 -- Memoria privada de Skelly Redactor. Estas tablas no tienen politicas para
 -- authenticated: el cliente nunca accede al conocimiento directamente.

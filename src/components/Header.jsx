@@ -1,5 +1,6 @@
 ﻿import {
   Bone,
+  ClipboardList,
   CircleHelp,
   Info,
   LogOut,
@@ -284,6 +285,11 @@ export default function Header({
                 Desbloquear edicion
               </button>
             )}
+
+            <a href="#/botones-eco" className="button-secondary group">
+              <ClipboardList className="h-4 w-4" />
+              Botones Eco
+            </a>
 
             {hasSession ? (
               <button type="button" onClick={onSignOut} className="button-secondary group">

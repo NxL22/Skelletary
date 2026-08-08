@@ -1,0 +1,149 @@
+[
+  {
+    "id": "eco-abdomen",
+    "groupId": "abdomen-pelvis",
+    "name": "Eco abdomen",
+    "copyText": "Plantilla de eco abdomen agrega:",
+    "visualKey": "abdomen"
+  },
+  {
+    "id": "eco-abdomen-esteatosis",
+    "groupId": "abdomen-pelvis",
+    "name": "Eco abdomen esteatosis",
+    "copyText": "Plantilla de eco abdomen con esteatosis.",
+    "visualKey": "abdomen"
+  },
+  {
+    "id": "eco-abdomen-infantil",
+    "groupId": "abdomen-pelvis",
+    "name": "Eco abdomen infantil",
+    "copyText": "Plantilla de eco abdomen infantil agrega:",
+    "visualKey": "abdomen-infantil"
+  },
+  {
+    "id": "eco-partes-blandas-abdomen",
+    "groupId": "partes-blandas",
+    "name": "Eco partes blandas abdomen",
+    "copyText": "Plantilla de eco partes blandas abdomen agrega:",
+    "visualKey": "partes-blandas"
+  },
+  {
+    "id": "eco-renal",
+    "groupId": "abdomen-pelvis",
+    "name": "Eco renal",
+    "copyText": "Plantilla de eco renal agrega:",
+    "visualKey": "renal"
+  },
+  {
+    "id": "eco-pelviana-masculina",
+    "groupId": "abdomen-pelvis",
+    "name": "Eco pelviana masculina",
+    "copyText": "Plantilla de eco pelviana masculina agrega:",
+    "visualKey": "pelvis"
+  },
+  {
+    "id": "eco-tiroides",
+    "groupId": "cuello",
+    "name": "Eco tiroides",
+    "copyText": "Plantilla de eco tiroides agrega:",
+    "visualKey": "tiroides"
+  },
+  {
+    "id": "eco-testicular",
+    "groupId": "genitourinario",
+    "name": "Eco testicular",
+    "copyText": "Plantilla de eco testicular agrega:",
+    "visualKey": "genitourinario"
+  },
+  {
+    "id": "eco-doppler-testicular",
+    "groupId": "genitourinario",
+    "name": "Eco Doppler testicular",
+    "copyText": "Plantilla de eco Doppler testicular agrega:",
+    "visualKey": "doppler"
+  },
+  {
+    "id": "eco-doppler-arterial-extremidades-inferiores",
+    "groupId": "doppler-vascular",
+    "name": "Eco Doppler arterial de extremidades inferiores",
+    "copyText": "Plantilla de eco Doppler arterial de extremidades inferiores agrega:",
+    "visualKey": "vascular"
+  },
+  {
+    "id": "eco-doppler-carotideo-bilateral",
+    "groupId": "cuello",
+    "name": "Eco Doppler carotídeo bilateral",
+    "copyText": "Plantilla de eco Doppler carotídeo bilateral agrega:",
+    "visualKey": "doppler-cuello"
+  },
+  {
+    "id": "eco-doppler-venoso-extremidades-inferiores",
+    "groupId": "doppler-vascular",
+    "name": "Eco Doppler venoso de extremidades inferiores",
+    "copyText": "Plantilla de eco Doppler venoso de extremidades inferiores agrega:",
+    "visualKey": "vascular"
+  },
+  {
+    "id": "eco-hombro",
+    "groupId": "musculoesqueletico",
+    "name": "Eco hombro",
+    "copyText": "Plantilla de eco hombro agrega:",
+    "visualKey": "hombro"
+  },
+  {
+    "id": "eco-muneca",
+    "groupId": "musculoesqueletico",
+    "name": "Eco muñeca",
+    "copyText": "Plantilla de eco muñeca agrega:",
+    "visualKey": "mano"
+  },
+  {
+    "id": "eco-codo",
+    "groupId": "musculoesqueletico",
+    "name": "Eco codo",
+    "copyText": "Plantilla de eco codo agrega:",
+    "visualKey": "extremidad"
+  },
+  {
+    "id": "eco-pie",
+    "groupId": "musculoesqueletico",
+    "name": "Eco pie",
+    "copyText": "Plantilla de eco pie agrega:",
+    "visualKey": "pie"
+  },
+  {
+    "id": "eco-tobillo",
+    "groupId": "musculoesqueletico",
+    "name": "Eco tobillo",
+    "copyText": "Plantilla de eco tobillo agrega:",
+    "visualKey": "extremidad"
+  },
+  {
+    "id": "eco-de-pierna",
+    "groupId": "musculoesqueletico",
+    "name": "Eco de Pierna",
+    "copyText": "Plantilla de eco de pierna agrega:",
+    "visualKey": "extremidad"
+  },
+  {
+    "id": "eco-partes-blandas-cara",
+    "groupId": "partes-blandas",
+    "name": "Eco partes blandas de cara",
+    "copyText": "Plantilla de eco partes blandas de cara agrega:",
+    "visualKey": "cara"
+  },
+  {
+    "id": "eco-partes-blandas-inguinal-infantil",
+    "groupId": "partes-blandas",
+    "name": "Eco partes blandas inguinal infantil",
+    "copyText": "Plantilla de eco partes blandas inguinal infantil agrega:",
+    "visualKey": "partes-blandas"
+  },
+  {
+    "id": "eco-partes-blandas-toracica",
+    "groupId": "partes-blandas",
+    "name": "Eco de Partes Blandas Torácica",
+    "copyText": "Plantilla de eco de partes blandas torácica agrega:",
+    "visualKey": "torax"
+  }
+]

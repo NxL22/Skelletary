@@ -20,6 +20,9 @@ const EDIT_UNLOCK_KEY = "skelletary.editUnlockedUntil";
 const SESSION_CACHE_KEY = "skelletary.cachedSession";
 const STORAGE_PREFIX = "skelletary.";
 const PREFERENCE_PREFIX = "skelletary.preference.";
+const ECO_CARDS_CACHE_PREFIX = "skelletary.botonesEco.cards.";
+const ECO_MIGRATION_PREFIX = "skelletary.botonesEco.migration.";
+const LEGACY_ECO_CARDS_KEY = "botones-eco-tarjetas";
 
 function canUseStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
@@ -53,6 +56,55 @@ export function loadTemplates() {
 
 export function saveTemplates(templates) {
   saveJson(TEMPLATE_CACHE_KEY, templates);
+}
+
+// Botones Eco tiene un cache separado de la biblioteca radiologica. Asi una
+// tarjeta de acceso rapido nunca termina mezclada con una plantilla de informe
+// ni se conserva accidentalmente en el espacio de otra cuenta.
+export function loadEcoCardsCache(userId) {
+  if (!userId) {
+    return null;
+  }
+
+  const cachedCards = loadJson(`${ECO_CARDS_CACHE_PREFIX}${userId}`);
+  return Array.isArray(cachedCards) ? cachedCards : null;
+}
+
+export function saveEcoCardsCache(userId, cards) {
+  if (!userId || !Array.isArray(cards)) {
+    return;
+  }
+
+  saveJson(`${ECO_CARDS_CACHE_PREFIX}${userId}`, cards);
+}
+
+export function loadLegacyEcoCards() {
+  const legacyCards = loadJson(LEGACY_ECO_CARDS_KEY);
+  return Array.isArray(legacyCards) ? legacyCards : null;
+}
+
+export function clearLegacyEcoCards() {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.removeItem(LEGACY_ECO_CARDS_KEY);
+}
+
+export function hasCompletedEcoMigration(userId) {
+  if (!canUseStorage() || !userId) {
+    return false;
+  }
+
+  return window.localStorage.getItem(`${ECO_MIGRATION_PREFIX}${userId}`) === "done";
+}
+
+export function markEcoMigrationCompleted(userId) {
+  if (!canUseStorage() || !userId) {
+    return;
+  }
+
+  window.localStorage.setItem(`${ECO_MIGRATION_PREFIX}${userId}`, "done");
 }
 
 export function resetTemplates(defaultTemplates) {
